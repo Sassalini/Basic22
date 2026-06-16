@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --background: #03110d;
+  --foreground: #f3f7f4;
+  --panel: #08251b;
+  --panel-soft: #0a2e22;
+  --accent: #004225;
+  --accent-hover: #0b7a46;
+  --muted: #9cafa5;
+  --border: rgba(255, 255, 255, 0.08);
+}
+
+:root.light {
+  color-scheme: light;
+  --background: #eef5f0;
+  --foreground: #092019;
+  --panel: #ffffff;
+  --panel-soft: #dfece5;
+  --accent: #004225;
+  --accent-hover: #0b7a46;
+  --muted: #4e665b;
+  --border: rgba(0, 66, 37, 0.16);
+}
+
+:root.light .bg-brg-accent,
+:root.light .bg-brg-accent:active,
+:root.light .hover\:bg-brg-accentHover:hover {
+  color: #f3f7f4;
+}
+
+:root.light .bg-brg-accent:disabled {
+  color: #f3f7f4;
+  opacity: 0.78;
+}
+
+:root.light .file\:bg-brg-accent::file-selector-button {
+  color: #f3f7f4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: var(--background);
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(11, 122, 70, 0.5);
+  color: #f3f7f4;
+}
+
+.calm-scrollbar {
+  scrollbar-color: rgba(156, 175, 165, 0.35) transparent;
+  scrollbar-width: thin;
+}
+
+.calm-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.calm-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(156, 175, 165, 0.24);
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
