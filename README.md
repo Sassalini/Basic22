@@ -38,7 +38,7 @@ Basic22 is a minimal, ad-free, friends-only social media MVP. It uses a dark Bri
 - Supabase Auth
 - Supabase Postgres
 - Supabase Storage
-- Cloudflare Pages deployment target
+- Cloudflare Workers deployment target through OpenNext
 
 ## Install dependencies
 
@@ -106,14 +106,26 @@ npm run typecheck
 npm run lint
 ```
 
-## Deploy to Cloudflare Pages
+## Deploy to Cloudflare Workers
 
-Set the same Supabase environment variables in Cloudflare Pages:
+Set the same Supabase environment variables in Cloudflare Workers:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-Use the Cloudflare Pages Next.js deployment flow for your account. Keep Supabase as the backend for auth, database, and image storage in this MVP. Cloudflare R2 is intentionally not implemented yet.
+Build and deploy with the OpenNext Cloudflare adapter:
+
+```bash
+npm run deploy
+```
+
+For a local Workers preview:
+
+```bash
+npm run preview
+```
+
+For local Workers development variables, copy `.dev.vars.example` to `.dev.vars` and keep real values out of git. Keep Supabase as the backend for auth, database, and image storage in this MVP. Cloudflare R2 is intentionally not implemented.
 
 ## Product rules
 
