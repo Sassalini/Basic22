@@ -113,7 +113,16 @@ Set the same Supabase environment variables in Cloudflare Workers:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-Build and deploy with the OpenNext Cloudflare adapter:
+Cloudflare should run the OpenNext build before Wrangler deploys the Worker:
+
+```bash
+npm run build
+npx wrangler deploy
+```
+
+`npm run build` generates the `.open-next` Worker output used by `wrangler.jsonc`, including `.open-next/worker.js` and `.open-next/assets`.
+
+For a local command that builds and deploys through the OpenNext Cloudflare adapter:
 
 ```bash
 npm run deploy
