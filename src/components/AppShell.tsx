@@ -1,4 +1,5 @@
 import { LogOut } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signOut } from "@/app/auth/actions";
 import { Avatar } from "@/components/Avatar";
@@ -42,12 +43,18 @@ export async function AppShell({ children, title }: AppShellProps) {
           <div className="flex items-center justify-between lg:block">
             <Logo />
             <div className="lg:hidden">
-              <Avatar
-                className="border border-brg-border bg-brg-panel"
-                imageUrl={profileImageUrl}
-                name={displayName}
-                size="md"
-              />
+              <Link
+                href={`/friends/${user.id}`}
+                className="block rounded-full focus:outline-none focus:ring-2 focus:ring-[#0B7A46]/70"
+                aria-label="Open your profile"
+              >
+                <Avatar
+                  className="border border-brg-border bg-brg-panel"
+                  imageUrl={profileImageUrl}
+                  name={displayName}
+                  size="md"
+                />
+              </Link>
             </div>
           </div>
 
@@ -81,13 +88,16 @@ export async function AppShell({ children, title }: AppShellProps) {
                   {title}
                 </h1>
               </div>
-              <div className="hidden items-center gap-3 rounded-full border border-brg-border bg-brg-panel/70 px-3 py-2 lg:flex">
+              <Link
+                href={`/friends/${user.id}`}
+                className="hidden items-center gap-3 rounded-full border border-brg-border bg-brg-panel/70 px-3 py-2 transition hover:border-[#0B7A46]/60 lg:flex"
+              >
                 <Avatar imageUrl={profileImageUrl} name={displayName} size="sm" />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold">{displayName}</p>
                   <p className="truncate text-xs text-brg-muted">@{profile?.username ?? "basic22"}</p>
                 </div>
-              </div>
+              </Link>
             </header>
 
             {children}

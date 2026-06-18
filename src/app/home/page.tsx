@@ -1,4 +1,5 @@
 import { HeartHandshake, ImagePlus, MessageCircle, Send, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { addComment, createPost, deletePost, toggleLike } from "@/app/home/actions";
 import { AppShell } from "@/components/AppShell";
@@ -191,16 +192,33 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   className="rounded-xl border border-[#124D33]/80 bg-[#07351F] p-4 shadow-[0_18px_55px_rgba(0,0,0,0.30),0_0_36px_rgba(11,122,70,0.12)]"
                 >
                   <div className="flex items-start gap-3">
-                    <Avatar
-                      imageUrl={profile ? profileImageUrls.get(profile.id) : null}
-                      name={profile?.display_name ?? profile?.username}
-                      size="lg"
-                    />
+                    {profile ? (
+                      <Link
+                        href={`/friends/${profile.id}`}
+                        className="rounded-full focus:outline-none focus:ring-2 focus:ring-[#0B7A46]/70"
+                        aria-label="Open profile"
+                      >
+                        <Avatar
+                          imageUrl={profileImageUrls.get(profile.id)}
+                          name={profile.display_name ?? profile.username}
+                          size="lg"
+                        />
+                      </Link>
+                    ) : (
+                      <Avatar name="Basic22 user" size="lg" />
+                    )}
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                        <h2 className="font-semibold">
-                          {profile?.display_name ?? "Basic22 user"}
-                        </h2>
+                        {profile ? (
+                          <Link
+                            href={`/friends/${profile.id}`}
+                            className="font-semibold transition hover:text-[#9FE7BE]"
+                          >
+                            {profile.display_name ?? "Basic22 user"}
+                          </Link>
+                        ) : (
+                          <h2 className="font-semibold">Basic22 user</h2>
+                        )}
                         <p className="text-xs text-brg-muted">@{profile?.username ?? "user"}</p>
                         <p className="text-xs text-brg-muted">
                           {formatRelativeTime(post.created_at)}
@@ -260,16 +278,33 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                       const author = profiles.get(comment.author_id);
                       return (
                         <div key={comment.id} className="flex gap-3">
-                          <Avatar
-                            className="bg-white/[0.05]"
-                            imageUrl={author ? profileImageUrls.get(author.id) : null}
-                            name={author?.display_name ?? author?.username}
-                            size="sm"
-                          />
+                          {author ? (
+                            <Link
+                              href={`/friends/${author.id}`}
+                              className="h-8 rounded-full focus:outline-none focus:ring-2 focus:ring-[#0B7A46]/70"
+                              aria-label="Open profile"
+                            >
+                              <Avatar
+                                className="bg-white/[0.05]"
+                                imageUrl={profileImageUrls.get(author.id)}
+                                name={author.display_name ?? author.username}
+                                size="sm"
+                              />
+                            </Link>
+                          ) : (
+                            <Avatar className="bg-white/[0.05]" name="Basic22 user" size="sm" />
+                          )}
                           <div className="min-w-0 rounded-lg border border-[#124D33]/45 bg-[#021A12]/75 px-3 py-2">
-                            <p className="text-xs font-semibold">
-                              {author?.display_name ?? "Basic22 user"}
-                            </p>
+                            {author ? (
+                              <Link
+                                href={`/friends/${author.id}`}
+                                className="text-xs font-semibold transition hover:text-[#9FE7BE]"
+                              >
+                                {author.display_name ?? "Basic22 user"}
+                              </Link>
+                            ) : (
+                              <p className="text-xs font-semibold">Basic22 user</p>
+                            )}
                             <p className="mt-1 whitespace-pre-wrap text-sm leading-5">
                               {comment.body}
                             </p>

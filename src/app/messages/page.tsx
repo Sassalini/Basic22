@@ -1,10 +1,11 @@
-import { Send } from "lucide-react";
+import { Send, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { sendDirectMessage } from "@/app/messages/actions";
+import { deleteDirectMessage, sendDirectMessage } from "@/app/messages/actions";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Avatar";
 import { EmptyState } from "@/components/EmptyState";
+import { MessageScroller } from "@/components/MessageScroller";
 import { getProfileImageUrls } from "@/lib/profile-images";
 import { createClient } from "@/lib/supabase/server";
 import { classNames, formatDateTime } from "@/lib/utils";
@@ -32,6 +33,7 @@ type ProfileRecord = {
 };
 
 type MessageRecord = {
+  deleted_at: string | null;
   id: string;
   sender_id: string;
   recipient_id: string;
@@ -83,7 +85,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
   if (selectedFriendId) {
     const { data: messageRows } = await supabase
       .from("direct_messages")
-      .select("id, sender_id, recipient_id, body, created_at")
+      .select("id, sender_id, recipient_id, body, created_at, deleted_at")
       .or(`sender_id.eq.${selectedFriendId},recipient_id.eq.${selectedFriendId}`)
       .order("created_at", { ascending: true })
       .limit(100);
@@ -101,10 +103,10 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
         </p>
       ) : null}
 
-      <div className="grid min-h-[620px] overflow-hidden rounded-xl border border-brg-border bg-brg-panel/80 shadow-calm lg:grid-cols-[320px_1fr]">
-        <aside className="border-b border-brg-border p-4 lg:border-b-0 lg:border-r">
+      <div className="grid h-[calc(100svh-12rem)] min-h-[520px] overflow-hidden rounded-xl border border-brg-border bg-brg-panel/80 shadow-calm lg:h-[calc(100svh-8rem)] lg:min-h-[560px] lg:grid-cols-[320px_minmax(0,1fr)]">
+        <aside className="min-h-0 border-b border-brg-border p-4 lg:border-b-0 lg:border-r">
           <h2 className="font-semibold">Accepted friends</h2>
-          <div className="mt-4 space-y-2">
+          <div className="calm-scrollbar mt-4 max-h-40 space-y-2 overflow-y-auto pr-1 lg:max-h-none">
             {friendIds.length === 0 ? (
               <p className="text-sm text-brg-muted">
                 Add an accepted friend before starting a message.
@@ -140,23 +142,34 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
           </div>
         </aside>
 
-        <section className="flex min-h-[620px] flex-col">
+        <section className="flex min-h-0 flex-col">
           {selectedFriendId ? (
             <>
               <header className="border-b border-brg-border p-4">
                 <div className="flex items-center gap-3">
-                  <Avatar
-                    imageUrl={
-                      selectedFriend ? profileImageUrls.get(selectedFriend.id) : null
-                    }
-                    name={selectedFriend?.display_name ?? selectedFriend?.username}
-                    size="md"
-                  />
+                  <Link
+                    href={`/friends/${selectedFriendId}`}
+                    className="rounded-full focus:outline-none focus:ring-2 focus:ring-[#0B7A46]/70"
+                    aria-label="Open friend profile"
+                  >
+                    <Avatar
+                      imageUrl={
+                        selectedFriend ? profileImageUrls.get(selectedFriend.id) : null
+                      }
+                      name={selectedFriend?.display_name ?? selectedFriend?.username}
+                      size="md"
+                    />
+                  </Link>
                   <div>
                     <p className="text-sm text-brg-muted">Conversation with</p>
-                    <h2 className="text-lg font-semibold">
-                      {selectedFriend?.display_name ?? selectedFriend?.username ?? "Basic22 user"}
-                    </h2>
+                    <Link
+                      href={`/friends/${selectedFriendId}`}
+                      className="text-lg font-semibold transition hover:text-[#9FE7BE]"
+                    >
+                      {selectedFriend?.display_name ??
+                        selectedFriend?.username ??
+                        "Basic22 user"}
+                    </Link>
                     {selectedFriend?.about ? (
                       <p className="mt-1 text-sm leading-6 text-brg-muted">
                         {selectedFriend.about}
@@ -166,7 +179,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                 </div>
               </header>
 
-              <div className="calm-scrollbar flex-1 space-y-3 overflow-y-auto p-4">
+              <MessageScroller className="calm-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
                 {messages.length === 0 ? (
                   <EmptyState
                     title="No messages yet"
@@ -175,6 +188,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                 ) : (
                   messages.map((message) => {
                     const mine = message.sender_id === user.id;
+                    const deleted = Boolean(message.deleted_at);
                     return (
                       <div
                         key={message.id}
@@ -183,21 +197,49 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                         <div
                           className={classNames(
                             "max-w-[78%] rounded-xl border px-4 py-3",
-                            mine
+                            deleted
+                              ? "border-brg-border bg-white/[0.03] text-brg-muted"
+                              : mine
                               ? "border-[#0B7A46]/60 bg-brg-accent text-brg-text"
                               : "border-brg-border bg-white/[0.04]"
                           )}
                         >
-                          <p className="whitespace-pre-wrap text-sm leading-6">{message.body}</p>
-                          <p className="mt-2 text-xs opacity-70">
-                            {formatDateTime(message.created_at)}
+                          <p
+                            className={classNames(
+                              "whitespace-pre-wrap text-sm leading-6",
+                              deleted && "italic"
+                            )}
+                          >
+                            {deleted ? "Message deleted" : message.body}
                           </p>
+                          <div className="mt-2 flex items-center justify-between gap-3">
+                            <p className="text-xs opacity-70">
+                              {formatDateTime(message.created_at)}
+                            </p>
+                            {mine && !deleted ? (
+                              <form action={deleteDirectMessage}>
+                                <input type="hidden" name="message_id" value={message.id} />
+                                <input
+                                  type="hidden"
+                                  name="friend_id"
+                                  value={selectedFriendId}
+                                />
+                                <button
+                                  type="submit"
+                                  className="inline-flex h-7 w-7 items-center justify-center rounded-md opacity-70 transition hover:bg-white/[0.08] hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[#0B7A46]/70"
+                                  aria-label="Delete message"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </form>
+                            ) : null}
+                          </div>
                         </div>
                       </div>
                     );
                   })
                 )}
-              </div>
+              </MessageScroller>
 
               <form action={sendDirectMessage} className="flex gap-2 border-t border-brg-border p-4">
                 <input type="hidden" name="recipient_id" value={selectedFriendId} />

@@ -3,6 +3,11 @@ type ProfileImageSource = {
   id: string;
 };
 
+type ProfileGalleryImageSource = {
+  id: string;
+  image_path: string;
+};
+
 type ProfileImageStorageClient = {
   storage: {
     from(bucket: string): {
@@ -32,6 +37,27 @@ export async function getProfileImageUrls(
 
       if (data?.signedUrl) {
         urls.set(profile.id, data.signedUrl);
+      }
+    })
+  );
+
+  return urls;
+}
+
+export async function getProfileGalleryImageUrls(
+  supabase: ProfileImageStorageClient,
+  images: ProfileGalleryImageSource[]
+) {
+  const urls = new Map<string, string>();
+
+  await Promise.all(
+    images.map(async (image) => {
+      const { data } = await supabase.storage
+        .from("profile-images")
+        .createSignedUrl(image.image_path, 60 * 10);
+
+      if (data?.signedUrl) {
+        urls.set(image.id, data.signedUrl);
       }
     })
   );

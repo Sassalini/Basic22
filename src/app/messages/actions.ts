@@ -47,3 +47,32 @@ export async function sendDirectMessage(formData: FormData) {
   revalidatePath("/messages");
   redirect(`/messages?friend=${recipientId}`);
 }
+
+export async function deleteDirectMessage(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/sign-in");
+  }
+
+  const messageId = value(formData, "message_id");
+  const friendId = value(formData, "friend_id");
+
+  if (!messageId) {
+    messagesMessage("Message not found.", friendId);
+  }
+
+  const { error } = await supabase.rpc("delete_direct_message", {
+    message_id: messageId
+  });
+
+  if (error) {
+    messagesMessage(error.message, friendId);
+  }
+
+  revalidatePath("/messages");
+  redirect(friendId ? `/messages?friend=${friendId}` : "/messages");
+}

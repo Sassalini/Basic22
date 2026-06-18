@@ -1,4 +1,5 @@
 import { Check, Search, UserPlus, X } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   respondToFriendRequest,
@@ -24,7 +25,7 @@ type ProfileRecord = {
   id: string;
   display_name: string | null;
   username: string | null;
-  email: string | null;
+  relationship_status?: "pending" | "accepted" | "rejected" | "none";
 };
 
 type FriendshipRecord = {
@@ -62,34 +63,17 @@ export default async function FriendsPage({ searchParams }: FriendsPageProps) {
     (friendship) => friendship.status === "pending" && friendship.requester_id === user.id
   );
 
-  const relatedIds = new Set<string>();
-  friendships.forEach((friendship) => {
-    relatedIds.add(friendship.requester_id);
-    relatedIds.add(friendship.addressee_id);
-  });
-  relatedIds.delete(user.id);
-
   let profiles = new Map<string, ProfileRecord>();
-  if (relatedIds.size > 0) {
-    const { data: profileRows } = await supabase
-      .from("profiles")
-      .select("id, display_name, username, email, avatar_url, about")
-      .in("id", Array.from(relatedIds));
-
-    profiles = new Map(
-      ((profileRows ?? []) as ProfileRecord[]).map((profile) => [profile.id, profile])
-    );
-  }
+  const { data: profileRows } = await supabase.rpc("friendship_profile_summaries");
+  profiles = new Map(
+    ((profileRows ?? []) as ProfileRecord[]).map((profile) => [profile.id, profile])
+  );
 
   let searchResults: ProfileRecord[] = [];
   if (query) {
-    const pattern = `%${query}%`;
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, display_name, username, email, avatar_url, about")
-      .neq("id", user.id)
-      .or(`username.ilike.${pattern},email.ilike.${pattern},display_name.ilike.${pattern}`)
-      .limit(8);
+    const { data } = await supabase.rpc("search_profiles_for_friends", {
+      search_term: query
+    });
 
     searchResults = (data ?? []) as ProfileRecord[];
   }
@@ -99,7 +83,14 @@ export default async function FriendsPage({ searchParams }: FriendsPageProps) {
     ...searchResults
   ]);
 
-  function relationshipStatus(profileId: string) {
+  function relationshipStatus(
+    profileId: string,
+    profileStatus?: ProfileRecord["relationship_status"]
+  ) {
+    if (profileStatus) {
+      return profileStatus;
+    }
+
     const existing = friendships.find(
       (friendship) =>
         friendship.requester_id === profileId || friendship.addressee_id === profileId
@@ -120,7 +111,7 @@ export default async function FriendsPage({ searchParams }: FriendsPageProps) {
         <section className="space-y-5">
           <form className="rounded-xl border border-brg-border bg-brg-panel/80 p-4 shadow-calm">
             <label htmlFor="q" className="text-sm font-semibold">
-              Search by username or email
+              Search by username, display name, or email
             </label>
             <div className="mt-3 flex gap-2">
               <div className="relative flex-1">
@@ -153,32 +144,54 @@ export default async function FriendsPage({ searchParams }: FriendsPageProps) {
                   <p className="text-sm text-brg-muted">No people found for that search.</p>
                 ) : (
                   searchResults.map((profile) => {
-                    const status = relationshipStatus(profile.id);
+                    const status = relationshipStatus(profile.id, profile.relationship_status);
+                    const canOpenProfile = status === "accepted";
                     return (
                       <div
                         key={profile.id}
                         className="flex flex-col gap-3 rounded-lg border border-brg-border bg-white/[0.03] p-3 sm:flex-row sm:items-center sm:justify-between"
                       >
-                        <div className="flex items-center gap-3">
-                          <Avatar
-                            imageUrl={profileImageUrls.get(profile.id)}
-                            name={profile.display_name ?? profile.username}
-                            size="md"
-                          />
-                          <div>
-                            <p className="font-semibold">
-                              {profile.display_name ?? profile.username ?? "Basic22 user"}
-                            </p>
-                            <p className="text-xs text-brg-muted">
-                              @{profile.username ?? "user"} - {profile.email}
-                            </p>
-                            {profile.about ? (
-                              <p className="mt-1 text-xs leading-5 text-brg-muted">
-                                {profile.about}
+                        {canOpenProfile ? (
+                          <Link
+                            href={`/friends/${profile.id}`}
+                            className="flex items-center gap-3 rounded-lg transition hover:bg-white/[0.04]"
+                          >
+                            <Avatar
+                              imageUrl={profileImageUrls.get(profile.id)}
+                              name={profile.display_name ?? profile.username}
+                              size="md"
+                            />
+                            <div>
+                              <p className="font-semibold">
+                                {profile.display_name ?? profile.username ?? "Basic22 user"}
                               </p>
-                            ) : null}
+                              <p className="text-xs text-brg-muted">
+                                @{profile.username ?? "user"}
+                              </p>
+                              {profile.about ? (
+                                <p className="mt-1 text-xs leading-5 text-brg-muted">
+                                  {profile.about}
+                                </p>
+                              ) : null}
+                            </div>
+                          </Link>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <Avatar
+                              imageUrl={profileImageUrls.get(profile.id)}
+                              name={profile.display_name ?? profile.username}
+                              size="md"
+                            />
+                            <div>
+                              <p className="font-semibold">
+                                {profile.display_name ?? profile.username ?? "Basic22 user"}
+                              </p>
+                              <p className="text-xs text-brg-muted">
+                                @{profile.username ?? "user"}
+                              </p>
+                            </div>
                           </div>
-                        </div>
+                        )}
                         {status === "none" ? (
                           <form action={sendFriendRequest}>
                             <input type="hidden" name="addressee_id" value={profile.id} />
@@ -281,8 +294,9 @@ export default async function FriendsPage({ searchParams }: FriendsPageProps) {
                       : friendship.requester_id;
                   const friend = profiles.get(friendId);
                   return (
-                    <div
+                    <Link
                       key={friendship.id}
+                      href={`/friends/${friendId}`}
                       className="flex items-center gap-3 rounded-lg border border-brg-border bg-white/[0.03] p-3"
                     >
                       <Avatar
@@ -299,7 +313,7 @@ export default async function FriendsPage({ searchParams }: FriendsPageProps) {
                           <p className="mt-1 text-xs leading-5 text-brg-muted">{friend.about}</p>
                         ) : null}
                       </div>
-                    </div>
+                    </Link>
                   );
                 })
               )}

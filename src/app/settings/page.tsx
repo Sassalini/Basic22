@@ -1,12 +1,22 @@
+/* eslint-disable @next/next/no-img-element */
+import { ImagePlus, Trash2 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { signOut } from "@/app/auth/actions";
-import { updateProfile } from "@/app/settings/actions";
+import {
+  deleteProfileGalleryImage,
+  updateProfile,
+  uploadProfileGalleryImage
+} from "@/app/settings/actions";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Avatar";
 import { SubmitButton } from "@/components/SubmitButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { getProfileImageUrls } from "@/lib/profile-images";
+import {
+  getProfileGalleryImageUrls,
+  getProfileImageUrls
+} from "@/lib/profile-images";
 import { createClient } from "@/lib/supabase/server";
+import { formatRelativeTime } from "@/lib/utils";
 
 type SettingsPageProps = {
   searchParams: Promise<{
@@ -21,6 +31,12 @@ type ProfileRecord = {
   id: string;
   username: string | null;
   email: string | null;
+};
+
+type GalleryImageRecord = {
+  created_at: string;
+  id: string;
+  image_path: string;
 };
 
 export default async function SettingsPage({ searchParams }: SettingsPageProps) {
@@ -41,9 +57,18 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     .maybeSingle();
 
   const profile = data as ProfileRecord | null;
-  const profileImageUrls = await getProfileImageUrls(supabase, [
-    { id: user.id, avatar_url: profile?.avatar_url ?? null }
+  const [{ data: galleryRows }, profileImageUrls] = await Promise.all([
+    supabase
+      .from("profile_gallery_images")
+      .select("id, image_path, created_at")
+      .eq("owner_id", user.id)
+      .order("created_at", { ascending: false }),
+    getProfileImageUrls(supabase, [
+      { id: user.id, avatar_url: profile?.avatar_url ?? null }
+    ])
   ]);
+  const galleryImages = (galleryRows ?? []) as GalleryImageRecord[];
+  const galleryImageUrls = await getProfileGalleryImageUrls(supabase, galleryImages);
   const profileImageUrl = profileImageUrls.get(user.id);
   const displayName = profile?.display_name ?? user.email ?? "Basic22 user";
 
@@ -127,6 +152,67 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
         </section>
 
         <aside className="space-y-5">
+          <section className="rounded-xl border border-brg-border bg-brg-panel/80 p-5 shadow-calm">
+            <h2 className="text-lg font-semibold">Profile images</h2>
+            <form
+              action={uploadProfileGalleryImage}
+              encType="multipart/form-data"
+              className="mt-4 grid gap-3"
+            >
+              <label className="grid gap-2 text-sm">
+                Add image
+                <input
+                  name="gallery_image"
+                  type="file"
+                  required
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="min-h-11 rounded-lg border border-brg-border bg-black/10 px-3 py-2 text-brg-muted file:mr-3 file:rounded-md file:border-0 file:bg-brg-accent file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-brg-text"
+                />
+                <span className="text-xs text-brg-muted">
+                  Shared only with accepted friends. JPG, PNG, WebP, or GIF up to 5MB.
+                </span>
+              </label>
+              <SubmitButton pendingLabel="Uploading..." className="gap-2">
+                <ImagePlus size={16} />
+                Add image
+              </SubmitButton>
+            </form>
+
+            {galleryImages.length > 0 ? (
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                {galleryImages.map((image) => {
+                  const imageUrl = galleryImageUrls.get(image.id);
+
+                  return imageUrl ? (
+                    <figure
+                      key={image.id}
+                      className="overflow-hidden rounded-lg border border-brg-border bg-black/10"
+                    >
+                      <img
+                        src={imageUrl}
+                        alt=""
+                        className="aspect-square w-full object-cover"
+                      />
+                      <figcaption className="flex items-center justify-between gap-2 px-2 py-2 text-xs text-brg-muted">
+                        <span>{formatRelativeTime(image.created_at)}</span>
+                        <form action={deleteProfileGalleryImage}>
+                          <input type="hidden" name="image_id" value={image.id} />
+                          <button
+                            type="submit"
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-md transition hover:bg-white/[0.06] hover:text-brg-text focus:outline-none focus:ring-2 focus:ring-[#0B7A46]/70"
+                            aria-label="Delete profile image"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </form>
+                      </figcaption>
+                    </figure>
+                  ) : null;
+                })}
+              </div>
+            ) : null}
+          </section>
+
           <section className="rounded-xl border border-brg-border bg-brg-panel/80 p-5 shadow-calm">
             <h2 className="text-lg font-semibold">Theme</h2>
             <p className="mt-2 text-sm leading-6 text-brg-muted">

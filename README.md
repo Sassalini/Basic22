@@ -14,7 +14,10 @@ Basic22 is a minimal, ad-free, friends-only social media MVP. It uses a dark Bri
 - Friend search by username, display name, or email
 - Friend requests with accept/reject flow
 - Direct messages between accepted friends only
+- Users can delete their own direct messages; deleted messages are replaced with a minimal deleted state
+- Accepted friends can open private friend profile views
 - Settings for display name, username, profile photo, short about text, theme toggle, and logout
+- Profile image gallery uploads through private Supabase Storage, visible only to the owner and accepted friends
 - Supabase SQL migration with RLS policies
 
 ## What is intentionally excluded
@@ -71,6 +74,12 @@ supabase db push
 
 Or paste the migration SQL into the Supabase SQL editor for the target project.
 
+If you are updating an existing Basic22 Supabase project, apply the newest migration:
+
+```text
+supabase/migrations/20260618120000_private_profiles_messages_gallery.sql
+```
+
 The migration creates:
 
 - `profiles`
@@ -79,9 +88,11 @@ The migration creates:
 - `post_likes`
 - `post_comments`
 - `direct_messages`
+- `profile_gallery_images`
 - Private `post-images` Supabase Storage bucket
 - Private `profile-images` Supabase Storage bucket
-- Row Level Security policies for profiles, friendships, posts, likes, comments, direct messages, post image access, and profile image access
+- Row Level Security policies for private profiles, friendships, posts, likes, comments, direct messages, profile gallery images, post image access, and profile image access
+- RPC helpers for private friend search summaries and sender-only message soft deletion
 
 Manual Supabase checks after applying the migration:
 
@@ -90,6 +101,7 @@ Manual Supabase checks after applying the migration:
 - Confirm the private `post-images` bucket exists.
 - Confirm the private `profile-images` bucket exists.
 - Confirm RLS is enabled on all public tables listed above.
+- Confirm profile image storage policies are not public; the app uses short-lived signed URLs for avatars and profile gallery images.
 
 ## Run locally
 

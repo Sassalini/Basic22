@@ -18,7 +18,7 @@ function isImageFile(file: File) {
   return ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type);
 }
 
-export async function updateProfile(formData: FormData) {
+async function getUser() {
   const supabase = await createClient();
   const {
     data: { user }
@@ -28,6 +28,11 @@ export async function updateProfile(formData: FormData) {
     redirect("/sign-in");
   }
 
+  return { supabase, user };
+}
+
+export async function updateProfile(formData: FormData) {
+  const { supabase, user } = await getUser();
   const displayName = value(formData, "display_name");
   const username = value(formData, "username").toLowerCase();
   const about = value(formData, "about");
@@ -112,4 +117,90 @@ export async function updateProfile(formData: FormData) {
   revalidatePath("/messages");
   revalidatePath("/", "layout");
   settingsMessage("Settings saved.");
+}
+
+export async function uploadProfileGalleryImage(formData: FormData) {
+  const { supabase, user } = await getUser();
+  const image = formData.get("gallery_image");
+
+  if (!(image instanceof File) || image.size === 0) {
+    settingsMessage("Choose a profile image to upload.");
+  }
+
+  if (!isImageFile(image)) {
+    settingsMessage("Please upload a JPG, PNG, WebP, or GIF image.");
+  }
+
+  if (image.size > 5 * 1024 * 1024) {
+    settingsMessage("Profile images must be 5MB or smaller.");
+  }
+
+  const safeName =
+    image.name.replace(/[^a-zA-Z0-9._-]/g, "-").slice(-80) || "profile-image";
+  const imagePath = `${user.id}/gallery/${crypto.randomUUID()}-${safeName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("profile-images")
+    .upload(imagePath, image, {
+      contentType: image.type,
+      upsert: false
+    });
+
+  if (uploadError) {
+    settingsMessage(uploadError.message);
+  }
+
+  const { error } = await supabase.from("profile_gallery_images").insert({
+    owner_id: user.id,
+    image_path: imagePath
+  });
+
+  if (error) {
+    await supabase.storage.from("profile-images").remove([imagePath]);
+    settingsMessage(error.message);
+  }
+
+  revalidatePath("/settings");
+  revalidatePath(`/friends/${user.id}`);
+  settingsMessage("Profile image added.");
+}
+
+export async function deleteProfileGalleryImage(formData: FormData) {
+  const { supabase, user } = await getUser();
+  const imageId = value(formData, "image_id");
+
+  if (!imageId) {
+    settingsMessage("Profile image not found.");
+  }
+
+  const { data: image, error: findError } = await supabase
+    .from("profile_gallery_images")
+    .select("id, image_path")
+    .eq("id", imageId)
+    .eq("owner_id", user.id)
+    .maybeSingle();
+
+  if (findError) {
+    settingsMessage(findError.message);
+  }
+
+  if (!image) {
+    settingsMessage("You can only delete your own profile images.");
+  }
+
+  const { error } = await supabase
+    .from("profile_gallery_images")
+    .delete()
+    .eq("id", image.id)
+    .eq("owner_id", user.id);
+
+  if (error) {
+    settingsMessage(error.message);
+  }
+
+  await supabase.storage.from("profile-images").remove([image.image_path]);
+
+  revalidatePath("/settings");
+  revalidatePath(`/friends/${user.id}`);
+  settingsMessage("Profile image deleted.");
 }
