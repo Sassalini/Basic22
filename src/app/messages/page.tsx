@@ -179,7 +179,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                 </div>
               </header>
 
-              <MessageScroller className="calm-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+              <MessageScroller className="calm-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
                 {messages.length === 0 ? (
                   <EmptyState
                     title="No messages yet"
@@ -196,12 +196,12 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                       >
                         <div
                           className={classNames(
-                            "max-w-[78%] rounded-xl border px-4 py-3",
+                            "max-w-[84%] rounded-2xl border px-4 py-3 shadow-[0_10px_26px_rgba(0,0,0,0.18)] sm:max-w-[76%]",
                             deleted
-                              ? "border-brg-border bg-white/[0.03] text-brg-muted"
+                              ? "message-bubble-deleted"
                               : mine
-                              ? "border-[#0B7A46]/60 bg-brg-accent text-brg-text"
-                              : "border-brg-border bg-white/[0.04]"
+                              ? "message-bubble-sent"
+                              : "message-bubble-received"
                           )}
                         >
                           <p
@@ -213,7 +213,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                             {deleted ? "Message deleted" : message.body}
                           </p>
                           <div className="mt-2 flex items-center justify-between gap-3">
-                            <p className="text-xs opacity-70">
+                            <p className="text-xs message-timestamp">
                               {formatDateTime(message.created_at)}
                             </p>
                             {mine && !deleted ? (
@@ -226,7 +226,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                                 />
                                 <button
                                   type="submit"
-                                  className="inline-flex h-7 w-7 items-center justify-center rounded-md opacity-70 transition hover:bg-white/[0.08] hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[#0B7A46]/70"
+                                  className="inline-flex h-7 w-7 items-center justify-center rounded-md opacity-75 transition hover:bg-white/[0.08] hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[#0B7A46]/70"
                                   aria-label="Delete message"
                                 >
                                   <Trash2 size={14} />
@@ -252,7 +252,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                   required
                   maxLength={2000}
                   placeholder="Type a message"
-                  className="min-h-11 flex-1 rounded-lg border border-brg-border bg-black/10 px-3 text-sm outline-none transition placeholder:text-brg-muted focus:border-[#0B7A46]"
+                  className="feed-inner-surface min-h-11 flex-1 rounded-lg px-3 text-sm outline-none transition placeholder:text-brg-muted focus:border-[#2C8B54]"
                 />
                 <button
                   type="submit"

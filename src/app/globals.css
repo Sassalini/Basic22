@@ -12,6 +12,20 @@
   --accent-hover: #0b7a46;
   --muted: #9cafa5;
   --border: rgba(255, 255, 255, 0.08);
+  --feed-card: #073b24;
+  --feed-card-border: rgba(44, 139, 84, 0.46);
+  --feed-card-shadow: 0 18px 55px rgba(0, 0, 0, 0.34), 0 0 32px rgba(11, 122, 70, 0.13);
+  --feed-inner: #031b12;
+  --feed-inner-soft: rgba(3, 27, 18, 0.76);
+  --feed-body: #f3f7f4;
+  --feed-muted: #bed2c6;
+  --message-sent-bg: #075c36;
+  --message-sent-border: rgba(106, 210, 151, 0.45);
+  --message-received-bg: #0b3023;
+  --message-received-border: rgba(79, 145, 106, 0.36);
+  --message-deleted-bg: rgba(8, 37, 27, 0.62);
+  --message-deleted-border: rgba(156, 175, 165, 0.18);
+  --message-muted: #b4c7bd;
 }
 
 :root.light {
@@ -24,6 +38,20 @@
   --accent-hover: #0b7a46;
   --muted: #4e665b;
   --border: rgba(0, 66, 37, 0.16);
+  --feed-card: #f8fff9;
+  --feed-card-border: rgba(0, 66, 37, 0.22);
+  --feed-card-shadow: 0 16px 38px rgba(7, 39, 25, 0.11);
+  --feed-inner: #edf7f0;
+  --feed-inner-soft: #f2fbf4;
+  --feed-body: #092019;
+  --feed-muted: #4d665a;
+  --message-sent-bg: #d7efdf;
+  --message-sent-border: rgba(0, 66, 37, 0.26);
+  --message-received-bg: #eef8f1;
+  --message-received-border: rgba(0, 66, 37, 0.18);
+  --message-deleted-bg: rgba(223, 236, 229, 0.78);
+  --message-deleted-border: rgba(0, 66, 37, 0.14);
+  --message-muted: #5a6f65;
 }
 
 :root.light .bg-brg-accent,
@@ -82,4 +110,50 @@ textarea {
   border: 3px solid transparent;
   border-radius: 999px;
   background-clip: padding-box;
+}
+
+.feed-card-surface {
+  background: var(--feed-card);
+  border: 1px solid var(--feed-card-border);
+  box-shadow: var(--feed-card-shadow);
+}
+
+.feed-inner-surface {
+  background: var(--feed-inner);
+  border: 1px solid var(--feed-card-border);
+}
+
+.feed-comment-surface {
+  background: var(--feed-inner-soft);
+  border: 1px solid color-mix(in srgb, var(--feed-card-border) 70%, transparent);
+}
+
+.feed-body-text {
+  color: var(--feed-body);
+}
+
+.feed-muted-text {
+  color: var(--feed-muted);
+}
+
+.message-bubble-sent {
+  background: var(--message-sent-bg);
+  border-color: var(--message-sent-border);
+  color: var(--feed-body);
+}
+
+.message-bubble-received {
+  background: var(--message-received-bg);
+  border-color: var(--message-received-border);
+  color: var(--feed-body);
+}
+
+.message-bubble-deleted {
+  background: var(--message-deleted-bg);
+  border-color: var(--message-deleted-border);
+  color: var(--message-muted);
+}
+
+.message-timestamp {
+  color: var(--message-muted);
 }

@@ -14,6 +14,24 @@ function withMessage(message: string): never {
   redirect(`/home?${params.toString()}`);
 }
 
+type CreatePostState = {
+  ok: boolean;
+  message: string;
+  nonce: number;
+};
+
+function postState(ok: boolean, message: string): CreatePostState {
+  return {
+    ok,
+    message,
+    nonce: Date.now()
+  };
+}
+
+function isPostImageFile(file: File) {
+  return ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type);
+}
+
 async function getUser() {
   const supabase = await createClient();
   const {
@@ -27,19 +45,23 @@ async function getUser() {
   return { supabase, user };
 }
 
-export async function createPost(formData: FormData) {
+export async function createPost(formData: FormData): Promise<CreatePostState> {
   const { supabase, user } = await getUser();
   const body = textValue(formData, "body");
   const image = formData.get("image");
   let imagePath: string | null = null;
 
   if (!body) {
-    withMessage("Write something before posting.");
+    return postState(false, "Write something before posting.");
   }
 
   if (image instanceof File && image.size > 0) {
-    if (!image.type.startsWith("image/")) {
-      withMessage("Please upload an image file.");
+    if (!isPostImageFile(image)) {
+      return postState(false, "Please upload a JPG, PNG, WebP, or GIF image.");
+    }
+
+    if (image.size > 5 * 1024 * 1024) {
+      return postState(false, "Post images must be 5MB or smaller.");
     }
 
     const safeName =
@@ -54,7 +76,7 @@ export async function createPost(formData: FormData) {
       });
 
     if (uploadError) {
-      withMessage(uploadError.message);
+      return postState(false, uploadError.message);
     }
   }
 
@@ -65,11 +87,15 @@ export async function createPost(formData: FormData) {
   });
 
   if (error) {
-    withMessage(error.message);
+    if (imagePath) {
+      await supabase.storage.from("post-images").remove([imagePath]);
+    }
+
+    return postState(false, error.message);
   }
 
   revalidatePath("/home");
-  redirect("/home");
+  return postState(true, "Post shared.");
 }
 
 export async function deletePost(formData: FormData) {

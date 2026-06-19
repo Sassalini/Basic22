@@ -1,11 +1,11 @@
-import { HeartHandshake, ImagePlus, MessageCircle, Send, Trash2 } from "lucide-react";
+import { HeartHandshake, MessageCircle, Send, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { addComment, createPost, deletePost, toggleLike } from "@/app/home/actions";
+import { addComment, deletePost, toggleLike } from "@/app/home/actions";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Avatar";
+import { CreatePostForm } from "@/components/CreatePostForm";
 import { EmptyState } from "@/components/EmptyState";
-import { SubmitButton } from "@/components/SubmitButton";
 import { getProfileImageUrls } from "@/lib/profile-images";
 import { createClient } from "@/lib/supabase/server";
 import { formatRelativeTime } from "@/lib/utils";
@@ -142,37 +142,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <section className="space-y-4">
-          <form
-            action={createPost}
-            encType="multipart/form-data"
-            className="rounded-xl border border-[#124D33]/80 bg-[#06291B] p-4 shadow-[0_18px_55px_rgba(0,0,0,0.30),0_0_36px_rgba(11,122,70,0.11)]"
-          >
-            <label className="sr-only" htmlFor="body">
-              New post
-            </label>
-            <textarea
-              id="body"
-              name="body"
-              required
-              maxLength={2000}
-              rows={4}
-              placeholder="What would you like to share with friends?"
-              className="w-full resize-none rounded-lg border border-[#124D33]/80 bg-[#021A12] p-3 text-sm leading-6 text-brg-text outline-none transition placeholder:text-brg-muted focus:border-[#166B45]"
-            />
-            <div className="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-              <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-[#124D33]/80 px-3 text-sm text-brg-muted transition hover:border-[#166B45] hover:text-brg-text">
-                <ImagePlus size={17} />
-                Add image
-                <input
-                  name="image"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,image/gif"
-                  className="sr-only"
-                />
-              </label>
-              <SubmitButton pendingLabel="Posting...">Post</SubmitButton>
-            </div>
-          </form>
+          <CreatePostForm />
 
           {posts.length === 0 ? (
             <EmptyState
@@ -189,7 +159,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               return (
                 <article
                   key={post.id}
-                  className="rounded-xl border border-[#124D33]/80 bg-[#07351F] p-4 shadow-[0_18px_55px_rgba(0,0,0,0.30),0_0_36px_rgba(11,122,70,0.12)]"
+                  className="feed-card-surface rounded-xl p-4"
                 >
                   <div className="flex items-start gap-3">
                     {profile ? (
@@ -212,19 +182,19 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         {profile ? (
                           <Link
                             href={`/friends/${profile.id}`}
-                            className="font-semibold transition hover:text-[#9FE7BE]"
+                            className="font-semibold feed-body-text transition hover:text-[#9FE7BE]"
                           >
                             {profile.display_name ?? "Basic22 user"}
                           </Link>
                         ) : (
-                          <h2 className="font-semibold">Basic22 user</h2>
+                          <h2 className="font-semibold feed-body-text">Basic22 user</h2>
                         )}
-                        <p className="text-xs text-brg-muted">@{profile?.username ?? "user"}</p>
-                        <p className="text-xs text-brg-muted">
+                        <p className="text-xs feed-muted-text">@{profile?.username ?? "user"}</p>
+                        <p className="text-xs feed-muted-text">
                           {formatRelativeTime(post.created_at)}
                         </p>
                       </div>
-                      <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-brg-text">
+                      <p className="mt-3 whitespace-pre-wrap text-sm leading-6 feed-body-text">
                         {post.body}
                       </p>
                     </div>
@@ -233,7 +203,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         <input type="hidden" name="post_id" value={post.id} />
                         <button
                           type="submit"
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-brg-muted transition hover:bg-white/[0.04] hover:text-brg-text focus:outline-none focus:ring-2 focus:ring-[#0B7A46]/70"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg feed-muted-text transition hover:bg-white/[0.06] hover:text-brg-text focus:outline-none focus:ring-2 focus:ring-[#0B7A46]/70"
                           aria-label="Delete post"
                         >
                           <Trash2 size={16} />
@@ -243,21 +213,23 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   </div>
 
                   {imageUrls.get(post.id) ? (
-                    // Private signed Supabase URLs are short-lived, so this avoids remote image config.
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={imageUrls.get(post.id)}
-                      alt=""
-                      className="mt-4 max-h-[520px] w-full rounded-xl border border-[#124D33]/80 object-cover"
-                    />
+                    <div className="mt-4 overflow-hidden rounded-xl border border-[color:var(--feed-card-border)] bg-[color:var(--feed-inner)]">
+                      {/* Private signed Supabase URLs are short-lived, so this avoids remote image config. */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={imageUrls.get(post.id)}
+                        alt=""
+                        className="max-h-[520px] w-full object-contain"
+                      />
+                    </div>
                   ) : null}
 
-                  <div className="mt-4 flex items-center gap-3 text-sm text-brg-muted">
+                  <div className="mt-4 flex items-center gap-3 text-sm feed-muted-text">
                     <form action={toggleLike}>
                       <input type="hidden" name="post_id" value={post.id} />
                       <button
                         type="submit"
-                        className="inline-flex min-h-9 items-center gap-2 rounded-lg px-2 transition hover:bg-white/[0.04] hover:text-brg-text"
+                        className="inline-flex min-h-9 items-center gap-2 rounded-lg px-2 transition hover:bg-white/[0.06] hover:text-brg-text"
                         aria-label={userLiked ? "Remove like" : "Like post"}
                       >
                         <HeartHandshake
@@ -273,7 +245,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                     </span>
                   </div>
 
-                  <div className="mt-4 space-y-3 border-t border-[#124D33]/70 pt-4">
+                  <div className="mt-4 space-y-3 border-t border-[color:var(--feed-card-border)] pt-4">
                     {postComments.map((comment) => {
                       const author = profiles.get(comment.author_id);
                       return (
@@ -294,18 +266,20 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                           ) : (
                             <Avatar className="bg-white/[0.05]" name="Basic22 user" size="sm" />
                           )}
-                          <div className="min-w-0 rounded-lg border border-[#124D33]/45 bg-[#021A12]/75 px-3 py-2">
+                          <div className="feed-comment-surface min-w-0 rounded-lg px-3 py-2">
                             {author ? (
                               <Link
                                 href={`/friends/${author.id}`}
-                                className="text-xs font-semibold transition hover:text-[#9FE7BE]"
+                                className="text-xs font-semibold feed-body-text transition hover:text-[#9FE7BE]"
                               >
                                 {author.display_name ?? "Basic22 user"}
                               </Link>
                             ) : (
-                              <p className="text-xs font-semibold">Basic22 user</p>
+                              <p className="text-xs font-semibold feed-body-text">
+                                Basic22 user
+                              </p>
                             )}
-                            <p className="mt-1 whitespace-pre-wrap text-sm leading-5">
+                            <p className="mt-1 whitespace-pre-wrap text-sm leading-5 feed-body-text">
                               {comment.body}
                             </p>
                           </div>
@@ -324,7 +298,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         required
                         maxLength={1000}
                         placeholder="Write a comment"
-                        className="min-h-11 flex-1 rounded-lg border border-[#124D33]/80 bg-[#021A12] px-3 text-sm outline-none transition placeholder:text-brg-muted focus:border-[#166B45]"
+                        className="feed-inner-surface min-h-11 flex-1 rounded-lg px-3 text-sm outline-none transition placeholder:text-brg-muted focus:border-[#2C8B54]"
                       />
                       <button
                         type="submit"
