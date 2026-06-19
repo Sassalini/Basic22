@@ -111,7 +111,7 @@ export default async function FriendsPage({ searchParams }: FriendsPageProps) {
         <section className="space-y-5">
           <form className="rounded-xl border border-brg-border bg-brg-panel/80 p-4 shadow-calm">
             <label htmlFor="q" className="text-sm font-semibold">
-              Search by username, display name, or email
+              Search by display name, email, or username
             </label>
             <div className="mt-3 flex gap-2">
               <div className="relative flex-1">
@@ -240,7 +240,6 @@ export default async function FriendsPage({ searchParams }: FriendsPageProps) {
                             {requester?.display_name ?? "Basic22 user"}
                           </p>
                           <p className="text-xs text-brg-muted">
-                            @{requester?.username ?? "user"} -{" "}
                             {formatRelativeTime(friendship.created_at)}
                           </p>
                         </div>
@@ -308,7 +307,6 @@ export default async function FriendsPage({ searchParams }: FriendsPageProps) {
                         <p className="font-semibold">
                           {friend?.display_name ?? "Basic22 user"}
                         </p>
-                        <p className="text-xs text-brg-muted">@{friend?.username ?? "user"}</p>
                         {friend?.about ? (
                           <p className="mt-1 text-xs leading-5 text-brg-muted">{friend.about}</p>
                         ) : null}
@@ -328,7 +326,7 @@ export default async function FriendsPage({ searchParams }: FriendsPageProps) {
                   const addressee = profiles.get(friendship.addressee_id);
                   return (
                     <p key={friendship.id}>
-                      @{addressee?.username ?? "user"} -{" "}
+                      {addressee?.display_name ?? "Basic22 user"} -{" "}
                       {formatRelativeTime(friendship.created_at)}
                     </p>
                   );

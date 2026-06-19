@@ -189,7 +189,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         ) : (
                           <h2 className="font-semibold feed-body-text">Basic22 user</h2>
                         )}
-                        <p className="text-xs feed-muted-text">@{profile?.username ?? "user"}</p>
                         <p className="text-xs feed-muted-text">
                           {formatRelativeTime(post.created_at)}
                         </p>

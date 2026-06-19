@@ -41,7 +41,7 @@ export async function AppShell({ children, title }: AppShellProps) {
       <div className="grid min-h-screen lg:grid-cols-[260px_1fr]">
         <aside className="border-b border-brg-border bg-black/10 p-5 lg:border-b-0 lg:border-r lg:p-6">
           <div className="flex items-center justify-between lg:block">
-            <Logo />
+            <Logo href="/home" />
             <div className="lg:hidden">
               <Link
                 href={`/friends/${user.id}`}
@@ -95,7 +95,7 @@ export async function AppShell({ children, title }: AppShellProps) {
                 <Avatar imageUrl={profileImageUrl} name={displayName} size="sm" />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold">{displayName}</p>
-                  <p className="truncate text-xs text-brg-muted">@{profile?.username ?? "basic22"}</p>
+                  <p className="truncate text-xs text-brg-muted">View profile</p>
                 </div>
               </Link>
             </header>

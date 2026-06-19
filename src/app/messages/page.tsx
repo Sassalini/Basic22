@@ -133,7 +133,6 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                       <p className="font-semibold text-brg-text">
                         {friend?.display_name ?? "Basic22 user"}
                       </p>
-                      <p className="text-xs text-brg-muted">@{friend?.username ?? "user"}</p>
                     </div>
                   </Link>
                 );

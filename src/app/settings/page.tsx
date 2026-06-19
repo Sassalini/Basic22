@@ -91,7 +91,6 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
             <Avatar imageUrl={profileImageUrl} name={displayName} size="xl" />
             <div className="min-w-0">
               <p className="truncate text-lg font-semibold">{displayName}</p>
-              <p className="text-sm text-brg-muted">@{profile?.username ?? "basic22"}</p>
               <p className="mt-2 line-clamp-2 text-sm leading-6 text-brg-muted">
                 {profile?.about || "Add a short about section for friends to recognise you."}
               </p>
@@ -115,16 +114,6 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                 required
                 name="display_name"
                 defaultValue={profile?.display_name ?? ""}
-                className="min-h-11 rounded-lg border border-brg-border bg-black/10 px-3 text-brg-text outline-none transition placeholder:text-brg-muted focus:border-[#0B7A46]"
-              />
-            </label>
-            <label className="grid gap-2 text-sm">
-              Username
-              <input
-                required
-                name="username"
-                pattern="[a-zA-Z0-9_]{3,24}"
-                defaultValue={profile?.username ?? ""}
                 className="min-h-11 rounded-lg border border-brg-border bg-black/10 px-3 text-brg-text outline-none transition placeholder:text-brg-muted focus:border-[#0B7A46]"
               />
             </label>

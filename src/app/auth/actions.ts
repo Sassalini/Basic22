@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { generateUsername } from "@/lib/usernames";
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -36,9 +37,24 @@ export async function signIn(formData: FormData) {
 export async function signUp(formData: FormData) {
   const supabase = await createClient();
   const displayName = getString(formData, "display_name");
-  const username = getString(formData, "username").toLowerCase();
   const email = getString(formData, "email");
   const password = getString(formData, "password");
+  const username = generateUsername(displayName, {
+    maxLength: 15,
+    suffixLength: 4
+  });
+
+  if (!displayName) {
+    authRedirect("/sign-up", "Display name is required.");
+  }
+
+  if (displayName.length > 80) {
+    authRedirect("/sign-up", "Display name must be 80 characters or fewer.");
+  }
+
+  if (password.length < 8) {
+    authRedirect("/sign-up", "Password must be at least 8 characters.");
+  }
 
   const { error } = await supabase.auth.signUp({
     email,

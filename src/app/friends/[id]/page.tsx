@@ -144,7 +144,6 @@ export default async function FriendProfilePage({ params }: FriendProfilePagePro
             />
             <div className="min-w-0">
               <h2 className="truncate text-xl font-semibold">{displayName}</h2>
-              <p className="text-sm text-brg-muted">@{profile.username ?? "user"}</p>
             </div>
           </div>
 

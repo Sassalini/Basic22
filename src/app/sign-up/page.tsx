@@ -41,18 +41,6 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
             />
           </label>
           <label className="grid gap-2 text-sm">
-            Username
-            <input
-              required
-              name="username"
-              type="text"
-              pattern="[a-zA-Z0-9_]{3,24}"
-              autoComplete="username"
-              className="min-h-11 rounded-lg border border-brg-border bg-black/10 px-3 text-brg-text outline-none transition placeholder:text-brg-muted focus:border-[#0B7A46]"
-              placeholder="alex_green"
-            />
-          </label>
-          <label className="grid gap-2 text-sm">
             Email
             <input
               required

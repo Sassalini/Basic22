@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { generateUsername } from "@/lib/usernames";
 
 function value(formData: FormData, key: string) {
   const field = formData.get(key);
@@ -34,20 +35,15 @@ async function getUser() {
 export async function updateProfile(formData: FormData) {
   const { supabase, user } = await getUser();
   const displayName = value(formData, "display_name");
-  const username = value(formData, "username").toLowerCase();
   const about = value(formData, "about");
   const avatar = formData.get("avatar");
 
-  if (!displayName || !username) {
-    settingsMessage("Display name and username are required.");
+  if (!displayName) {
+    settingsMessage("Display name is required.");
   }
 
   if (displayName.length > 80) {
     settingsMessage("Display name must be 80 characters or fewer.");
-  }
-
-  if (!/^[a-z0-9_]{3,24}$/.test(username)) {
-    settingsMessage("Username must be 3-24 characters using letters, numbers, or underscores.");
   }
 
   if (about.length > 160) {
@@ -56,7 +52,7 @@ export async function updateProfile(formData: FormData) {
 
   const { data: currentProfile } = await supabase
     .from("profiles")
-    .select("avatar_url")
+    .select("avatar_url, username")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -92,7 +88,9 @@ export async function updateProfile(formData: FormData) {
       id: user.id,
       email: user.email,
       display_name: displayName,
-      username,
+      username:
+        currentProfile?.username ??
+        generateUsername(displayName, { maxLength: 24, suffixLength: 8 }),
       about,
       ...(avatarPath ? { avatar_url: avatarPath } : {})
     },
