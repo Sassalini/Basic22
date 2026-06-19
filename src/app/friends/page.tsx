@@ -2,11 +2,13 @@ import { Check, Search, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
+  removeFriend,
   respondToFriendRequest,
   sendFriendRequest
 } from "@/app/friends/actions";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Avatar";
+import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { EmptyState } from "@/components/EmptyState";
 import { getProfileImageUrls } from "@/lib/profile-images";
 import { createClient } from "@/lib/supabase/server";
@@ -293,25 +295,40 @@ export default async function FriendsPage({ searchParams }: FriendsPageProps) {
                       : friendship.requester_id;
                   const friend = profiles.get(friendId);
                   return (
-                    <Link
+                    <div
                       key={friendship.id}
-                      href={`/friends/${friendId}`}
-                      className="flex items-center gap-3 rounded-lg border border-brg-border bg-white/[0.03] p-3"
+                      className="rounded-lg border border-brg-border bg-white/[0.03] p-3"
                     >
-                      <Avatar
-                        imageUrl={friend ? profileImageUrls.get(friend.id) : null}
-                        name={friend?.display_name ?? friend?.username}
-                        size="md"
-                      />
-                      <div>
-                        <p className="font-semibold">
-                          {friend?.display_name ?? "Basic22 user"}
-                        </p>
-                        {friend?.about ? (
-                          <p className="mt-1 text-xs leading-5 text-brg-muted">{friend.about}</p>
-                        ) : null}
-                      </div>
-                    </Link>
+                      <Link
+                        href={`/friends/${friendId}`}
+                        className="flex items-center gap-3 rounded-lg"
+                      >
+                        <Avatar
+                          imageUrl={friend ? profileImageUrls.get(friend.id) : null}
+                          name={friend?.display_name ?? friend?.username}
+                          size="md"
+                        />
+                        <div>
+                          <p className="font-semibold">
+                            {friend?.display_name ?? "Basic22 user"}
+                          </p>
+                          {friend?.about ? (
+                            <p className="mt-1 text-xs leading-5 text-brg-muted">
+                              {friend.about}
+                            </p>
+                          ) : null}
+                        </div>
+                      </Link>
+                      <form action={removeFriend} className="mt-3">
+                        <input type="hidden" name="friendship_id" value={friendship.id} />
+                        <ConfirmSubmitButton
+                          confirmMessage="Remove this friend?"
+                          className="text-xs font-semibold text-brg-muted transition hover:text-brg-text"
+                        >
+                          Remove friend
+                        </ConfirmSubmitButton>
+                      </form>
+                    </div>
                   );
                 })
               )}

@@ -28,7 +28,7 @@ export async function sendDirectMessage(formData: FormData) {
   }
 
   const recipientId = value(formData, "recipient_id");
-  const body = value(formData, "body");
+  const body = value(formData, "basic22_message_compose") || value(formData, "body");
 
   if (!recipientId || !body) {
     messagesMessage("Message text is required.", recipientId);

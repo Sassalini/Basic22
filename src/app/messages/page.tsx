@@ -240,16 +240,24 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                 )}
               </MessageScroller>
 
-              <form action={sendDirectMessage} className="flex gap-2 border-t border-brg-border p-4">
+              <form
+                action={sendDirectMessage}
+                autoComplete="off"
+                className="flex gap-2 border-t border-brg-border p-4"
+              >
                 <input type="hidden" name="recipient_id" value={selectedFriendId} />
-                <label className="sr-only" htmlFor="body">
+                <label className="sr-only" htmlFor="basic22-message-compose">
                   Message
                 </label>
                 <input
-                  id="body"
-                  name="body"
+                  id="basic22-message-compose"
+                  name="basic22_message_compose"
                   required
                   maxLength={2000}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="sentences"
+                  spellCheck={true}
                   placeholder="Type a message"
                   className="feed-inner-surface min-h-11 flex-1 rounded-lg px-3 text-sm outline-none transition placeholder:text-brg-muted focus:border-[#2C8B54]"
                 />

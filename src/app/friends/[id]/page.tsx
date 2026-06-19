@@ -2,8 +2,10 @@
 import { ArrowLeft, MessageCircle, Settings } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { removeFriend } from "@/app/friends/actions";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Avatar";
+import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { EmptyState } from "@/components/EmptyState";
 import {
   getProfileGalleryImageUrls,
@@ -28,6 +30,7 @@ type ProfileRecord = {
 
 type FriendshipRecord = {
   addressee_id: string;
+  id: string;
   requester_id: string;
 };
 
@@ -60,20 +63,23 @@ export default async function FriendProfilePage({ params }: FriendProfilePagePro
   }
 
   let canView = id === user.id;
+  let friendshipId: string | null = null;
 
   if (!canView) {
     const { data: friendshipRows } = await supabase
       .from("friendships")
-      .select("requester_id, addressee_id")
+      .select("id, requester_id, addressee_id")
       .eq("status", "accepted")
       .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
 
     const friendships = (friendshipRows ?? []) as FriendshipRecord[];
-    canView = friendships.some(
+    const friendship = friendships.find(
       (friendship) =>
         (friendship.requester_id === user.id && friendship.addressee_id === id) ||
         (friendship.requester_id === id && friendship.addressee_id === user.id)
     );
+    canView = Boolean(friendship);
+    friendshipId = friendship?.id ?? null;
   }
 
   if (!canView) {
@@ -124,13 +130,26 @@ export default async function FriendProfilePage({ params }: FriendProfilePagePro
             Settings
           </Link>
         ) : (
-          <Link
-            href={`/messages?friend=${id}`}
-            className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-brg-accent px-3 text-sm font-semibold transition hover:bg-brg-accentHover"
-          >
-            <MessageCircle size={16} />
-            Message
-          </Link>
+          <>
+            <Link
+              href={`/messages?friend=${id}`}
+              className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-brg-accent px-3 text-sm font-semibold transition hover:bg-brg-accentHover"
+            >
+              <MessageCircle size={16} />
+              Message
+            </Link>
+            {friendshipId ? (
+              <form action={removeFriend}>
+                <input type="hidden" name="friendship_id" value={friendshipId} />
+                <ConfirmSubmitButton
+                  confirmMessage="Remove this friend?"
+                  className="inline-flex min-h-10 items-center rounded-lg border border-brg-border px-3 text-sm font-semibold text-brg-muted transition hover:border-[#0B7A46]/60 hover:text-brg-text"
+                >
+                  Remove friend
+                </ConfirmSubmitButton>
+              </form>
+            ) : null}
+          </>
         )}
       </div>
 
