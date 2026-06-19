@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { addComment, deletePost, toggleLike } from "@/app/home/actions";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Avatar";
+import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { CreatePostForm } from "@/components/CreatePostForm";
 import { EmptyState } from "@/components/EmptyState";
 import { getProfileImageUrls } from "@/lib/profile-images";
@@ -200,13 +201,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                     {post.author_id === user.id ? (
                       <form action={deletePost} className="shrink-0">
                         <input type="hidden" name="post_id" value={post.id} />
-                        <button
-                          type="submit"
+                        <ConfirmSubmitButton
+                          confirmMessage="Delete this post?"
                           className="inline-flex h-9 w-9 items-center justify-center rounded-lg feed-muted-text transition hover:bg-white/[0.06] hover:text-brg-text focus:outline-none focus:ring-2 focus:ring-[#0B7A46]/70"
                           aria-label="Delete post"
                         >
                           <Trash2 size={16} />
-                        </button>
+                        </ConfirmSubmitButton>
                       </form>
                     ) : null}
                   </div>
@@ -286,16 +287,23 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                       );
                     })}
 
-                    <form action={addComment} className="flex gap-2">
+                    <form action={addComment} autoComplete="off" className="flex gap-2">
                       <input type="hidden" name="post_id" value={post.id} />
-                      <label className="sr-only" htmlFor={`comment-${post.id}`}>
+                      <label
+                        className="sr-only"
+                        htmlFor={`basic22-comment-${post.id}`}
+                      >
                         Add comment
                       </label>
                       <input
-                        id={`comment-${post.id}`}
-                        name="body"
+                        id={`basic22-comment-${post.id}`}
+                        name="basic22_comment_body"
                         required
                         maxLength={1000}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="sentences"
+                        spellCheck={true}
                         placeholder="Write a comment"
                         className="feed-inner-surface min-h-11 flex-1 rounded-lg px-3 text-sm outline-none transition placeholder:text-brg-muted focus:border-[#2C8B54]"
                       />

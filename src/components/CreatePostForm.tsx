@@ -108,17 +108,22 @@ export function CreatePostForm() {
       ref={formRef}
       action={formAction}
       onSubmit={() => setLocalMessage("")}
+      autoComplete="off"
       className="feed-card-surface rounded-xl p-4"
     >
-      <label className="sr-only" htmlFor="body">
+      <label className="sr-only" htmlFor="basic22-post-compose">
         New post
       </label>
       <textarea
-        id="body"
-        name="body"
+        id="basic22-post-compose"
+        name="basic22_post_compose"
         required
         maxLength={2000}
         rows={4}
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="sentences"
+        spellCheck={true}
         placeholder="What would you like to share with friends?"
         className="feed-inner-surface w-full resize-none rounded-lg p-3 text-sm leading-6 text-brg-text outline-none transition placeholder:text-brg-muted focus:border-[#2C8B54]"
       />

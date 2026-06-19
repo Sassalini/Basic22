@@ -1,14 +1,12 @@
-import { Send, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { deleteDirectMessage, sendDirectMessage } from "@/app/messages/actions";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Avatar";
 import { EmptyState } from "@/components/EmptyState";
-import { MessageScroller } from "@/components/MessageScroller";
+import { MessageThread } from "@/components/MessageThread";
 import { getProfileImageUrls } from "@/lib/profile-images";
 import { createClient } from "@/lib/supabase/server";
-import { classNames, formatDateTime } from "@/lib/utils";
+import { classNames } from "@/lib/utils";
 
 type MessagesPageProps = {
   searchParams: Promise<{
@@ -87,6 +85,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
       .from("direct_messages")
       .select("id, sender_id, recipient_id, body, created_at, deleted_at")
       .or(`sender_id.eq.${selectedFriendId},recipient_id.eq.${selectedFriendId}`)
+      .is("deleted_at", null)
       .order("created_at", { ascending: true })
       .limit(100);
 
@@ -178,97 +177,12 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
                 </div>
               </header>
 
-              <MessageScroller className="calm-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
-                {messages.length === 0 ? (
-                  <EmptyState
-                    title="No messages yet"
-                    body="Send the first quiet note. Messages are only between accepted friends."
-                  />
-                ) : (
-                  messages.map((message) => {
-                    const mine = message.sender_id === user.id;
-                    const deleted = Boolean(message.deleted_at);
-                    return (
-                      <div
-                        key={message.id}
-                        className={classNames("flex", mine ? "justify-end" : "justify-start")}
-                      >
-                        <div
-                          className={classNames(
-                            "max-w-[84%] rounded-2xl border px-4 py-3 shadow-[0_10px_26px_rgba(0,0,0,0.18)] sm:max-w-[76%]",
-                            deleted
-                              ? "message-bubble-deleted"
-                              : mine
-                              ? "message-bubble-sent"
-                              : "message-bubble-received"
-                          )}
-                        >
-                          <p
-                            className={classNames(
-                              "whitespace-pre-wrap text-sm leading-6",
-                              deleted && "italic"
-                            )}
-                          >
-                            {deleted ? "Message deleted" : message.body}
-                          </p>
-                          <div className="mt-2 flex items-center justify-between gap-3">
-                            <p className="text-xs message-timestamp">
-                              {formatDateTime(message.created_at)}
-                            </p>
-                            {mine && !deleted ? (
-                              <form action={deleteDirectMessage}>
-                                <input type="hidden" name="message_id" value={message.id} />
-                                <input
-                                  type="hidden"
-                                  name="friend_id"
-                                  value={selectedFriendId}
-                                />
-                                <button
-                                  type="submit"
-                                  className="inline-flex h-7 w-7 items-center justify-center rounded-md opacity-75 transition hover:bg-white/[0.08] hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-[#0B7A46]/70"
-                                  aria-label="Delete message"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </form>
-                            ) : null}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </MessageScroller>
-
-              <form
-                action={sendDirectMessage}
-                autoComplete="off"
-                className="flex gap-2 border-t border-brg-border p-4"
-              >
-                <input type="hidden" name="recipient_id" value={selectedFriendId} />
-                <label className="sr-only" htmlFor="basic22-message-compose">
-                  Message
-                </label>
-                <input
-                  id="basic22-message-compose"
-                  name="basic22_message_compose"
-                  required
-                  maxLength={2000}
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="sentences"
-                  spellCheck={true}
-                  placeholder="Type a message"
-                  className="feed-inner-surface min-h-11 flex-1 rounded-lg px-3 text-sm outline-none transition placeholder:text-brg-muted focus:border-[#2C8B54]"
-                />
-                <button
-                  type="submit"
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-brg-accent transition hover:bg-brg-accentHover"
-                  aria-label="Send message"
-                >
-                  <Send size={17} />
-                </button>
-              </form>
+              <MessageThread
+                key={selectedFriendId}
+                currentUserId={user.id}
+                initialMessages={messages}
+                selectedFriendId={selectedFriendId}
+              />
             </>
           ) : (
             <div className="flex flex-1 items-center justify-center p-6">

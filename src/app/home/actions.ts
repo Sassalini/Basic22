@@ -47,7 +47,7 @@ async function getUser() {
 
 export async function createPost(formData: FormData): Promise<CreatePostState> {
   const { supabase, user } = await getUser();
-  const body = textValue(formData, "body");
+  const body = textValue(formData, "basic22_post_compose") || textValue(formData, "body");
   const image = formData.get("image");
   let imagePath: string | null = null;
 
@@ -181,7 +181,7 @@ export async function toggleLike(formData: FormData) {
 export async function addComment(formData: FormData) {
   const { supabase, user } = await getUser();
   const postId = textValue(formData, "post_id");
-  const body = textValue(formData, "body");
+  const body = textValue(formData, "basic22_comment_body") || textValue(formData, "body");
 
   if (!postId || !body) {
     withMessage("Comment text is required.");
