@@ -35,6 +35,36 @@ export async function AppShell({ children, title }: AppShellProps) {
     { id: user.id, avatar_url: profile?.avatar_url ?? null }
   ]);
   const profileImageUrl = profileImageUrls.get(user.id);
+  const [{ count: incomingFriendRequestCount }, { data: acceptedFriendshipRows }] =
+    await Promise.all([
+      supabase
+        .from("friendships")
+        .select("id", { count: "exact", head: true })
+        .eq("addressee_id", user.id)
+        .eq("status", "pending"),
+      supabase
+        .from("friendships")
+        .select("requester_id, addressee_id")
+        .eq("status", "accepted")
+        .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
+    ]);
+  const acceptedFriendIds = (acceptedFriendshipRows ?? []).map((friendship) =>
+    friendship.requester_id === user.id ? friendship.addressee_id : friendship.requester_id
+  );
+  const { count: unreadMessageCount } =
+    acceptedFriendIds.length > 0
+      ? await supabase
+          .from("direct_messages")
+          .select("id", { count: "exact", head: true })
+          .eq("recipient_id", user.id)
+          .in("sender_id", acceptedFriendIds)
+          .is("read_at", null)
+          .is("deleted_at", null)
+      : { count: 0 };
+  const navBadges = {
+    friends: incomingFriendRequestCount ?? 0,
+    messages: unreadMessageCount ?? 0
+  };
 
   return (
     <div className="min-h-screen bg-brg-bg text-brg-text">
@@ -59,11 +89,11 @@ export async function AppShell({ children, title }: AppShellProps) {
           </div>
 
           <div className="mt-7 hidden lg:block">
-            <NavLinks />
+            <NavLinks badges={navBadges} />
           </div>
 
           <div className="mt-6 overflow-x-auto pb-1 lg:hidden [&>nav]:auto-cols-max [&>nav]:grid-flow-col">
-            <NavLinks />
+            <NavLinks badges={navBadges} />
           </div>
 
           <div className="mt-5 flex flex-col gap-3 border-t border-brg-border pt-4 sm:flex-row lg:mt-auto lg:flex-col lg:pt-5">

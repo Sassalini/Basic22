@@ -37,6 +37,7 @@ type MessageRecord = {
   recipient_id: string;
   body: string;
   created_at: string;
+  read_at: string | null;
 };
 
 export default async function MessagesPage({ searchParams }: MessagesPageProps) {
@@ -81,9 +82,13 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
 
   let messages: MessageRecord[] = [];
   if (selectedFriendId) {
+    await supabase.rpc("mark_conversation_read", {
+      friend_id: selectedFriendId
+    });
+
     const { data: messageRows } = await supabase
       .from("direct_messages")
-      .select("id, sender_id, recipient_id, body, created_at, deleted_at")
+      .select("id, sender_id, recipient_id, body, created_at, deleted_at, read_at")
       .or(`sender_id.eq.${selectedFriendId},recipient_id.eq.${selectedFriendId}`)
       .is("deleted_at", null)
       .order("created_at", { ascending: true })

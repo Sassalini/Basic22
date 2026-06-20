@@ -117,7 +117,6 @@ export function CreatePostForm() {
       <textarea
         id="basic22-post-compose"
         name="basic22_post_compose"
-        required
         maxLength={2000}
         rows={4}
         autoComplete="off"

@@ -1,12 +1,13 @@
-import { HeartHandshake, MessageCircle, Send, Trash2 } from "lucide-react";
+import { HeartHandshake, MessageCircle, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { addComment, deletePost, toggleLike } from "@/app/home/actions";
+import { deletePost, toggleLike } from "@/app/home/actions";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Avatar";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { CreatePostForm } from "@/components/CreatePostForm";
 import { EmptyState } from "@/components/EmptyState";
+import { PostComments, type PostCommentView } from "@/components/PostComments";
 import { getProfileImageUrls } from "@/lib/profile-images";
 import { createClient } from "@/lib/supabase/server";
 import { formatRelativeTime } from "@/lib/utils";
@@ -39,11 +40,18 @@ type LikeRecord = {
 };
 
 type CommentRecord = {
-  id: string;
-  post_id: string;
   author_id: string;
   body: string;
   created_at: string;
+  deleted_at: string | null;
+  id: string;
+  parent_comment_id: string | null;
+  post_id: string;
+};
+
+type CommentLikeRecord = {
+  comment_id: string;
+  user_id: string;
 };
 
 export default async function HomePage({ searchParams }: HomePageProps) {
@@ -68,19 +76,31 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const authorIds = new Set(posts.map((post) => post.author_id));
   let likes: LikeRecord[] = [];
   let comments: CommentRecord[] = [];
+  let commentLikes: CommentLikeRecord[] = [];
 
   if (postIds.length > 0) {
     const [{ data: likeRecords }, { data: commentRecords }] = await Promise.all([
       supabase.from("post_likes").select("post_id, user_id").in("post_id", postIds),
       supabase
         .from("post_comments")
-        .select("id, post_id, author_id, body, created_at")
+        .select("id, post_id, parent_comment_id, author_id, body, created_at, deleted_at")
         .in("post_id", postIds)
         .order("created_at", { ascending: true })
     ]);
 
     likes = (likeRecords ?? []) as LikeRecord[];
     comments = (commentRecords ?? []) as CommentRecord[];
+    const commentIds = comments.map((comment) => comment.id);
+
+    if (commentIds.length > 0) {
+      const { data } = await supabase
+        .from("comment_likes")
+        .select("comment_id, user_id")
+        .in("comment_id", commentIds);
+
+      commentLikes = (data ?? []) as CommentLikeRecord[];
+    }
+
     comments.forEach((comment) => authorIds.add(comment.author_id));
   }
 
@@ -113,6 +133,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     commentsByPost.set(comment.post_id, [
       ...(commentsByPost.get(comment.post_id) ?? []),
       comment
+    ]);
+  });
+
+  const commentLikesByComment = new Map<string, CommentLikeRecord[]>();
+  commentLikes.forEach((like) => {
+    commentLikesByComment.set(like.comment_id, [
+      ...(commentLikesByComment.get(like.comment_id) ?? []),
+      like
     ]);
   });
 
@@ -156,6 +184,35 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               const postLikes = likesByPost.get(post.id) ?? [];
               const userLiked = postLikes.some((like) => like.user_id === user.id);
               const postComments = commentsByPost.get(post.id) ?? [];
+              const visibleCommentCount = postComments.filter(
+                (comment) => !comment.deleted_at
+              ).length;
+              const commentViews: PostCommentView[] = postComments.map((comment) => {
+                const author = profiles.get(comment.author_id);
+                const commentLikeRows = commentLikesByComment.get(comment.id) ?? [];
+
+                return {
+                  author: author
+                    ? {
+                        displayName: author.display_name,
+                        id: author.id,
+                        imageUrl: profileImageUrls.get(author.id) ?? null,
+                        username: author.username
+                      }
+                    : null,
+                  authorId: comment.author_id,
+                  body: comment.body,
+                  createdAt: comment.created_at,
+                  currentUserLiked: commentLikeRows.some(
+                    (like) => like.user_id === user.id
+                  ),
+                  deletedAt: comment.deleted_at,
+                  id: comment.id,
+                  likeCount: commentLikeRows.length,
+                  parentCommentId: comment.parent_comment_id,
+                  postId: comment.post_id
+                };
+              });
 
               return (
                 <article
@@ -194,15 +251,17 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                           {formatRelativeTime(post.created_at)}
                         </p>
                       </div>
-                      <p className="mt-3 whitespace-pre-wrap text-sm leading-6 feed-body-text">
-                        {post.body}
-                      </p>
+                      {post.body ? (
+                        <p className="mt-3 whitespace-pre-wrap text-sm leading-6 feed-body-text">
+                          {post.body}
+                        </p>
+                      ) : null}
                     </div>
                     {post.author_id === user.id ? (
                       <form action={deletePost} className="shrink-0">
                         <input type="hidden" name="post_id" value={post.id} />
                         <ConfirmSubmitButton
-                          confirmMessage="Delete this post?"
+                          confirmMessage="Are you sure you want to delete this post?"
                           className="inline-flex h-9 w-9 items-center justify-center rounded-lg feed-muted-text transition hover:bg-white/[0.06] hover:text-brg-text focus:outline-none focus:ring-2 focus:ring-[#0B7A46]/70"
                           aria-label="Delete post"
                         >
@@ -241,81 +300,15 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                     </form>
                     <span className="inline-flex min-h-9 items-center gap-2 rounded-lg px-2">
                       <MessageCircle size={17} />
-                      {postComments.length}
+                      {visibleCommentCount}
                     </span>
                   </div>
 
-                  <div className="mt-4 space-y-3 border-t border-[color:var(--feed-card-border)] pt-4">
-                    {postComments.map((comment) => {
-                      const author = profiles.get(comment.author_id);
-                      return (
-                        <div key={comment.id} className="flex gap-3">
-                          {author ? (
-                            <Link
-                              href={`/friends/${author.id}`}
-                              className="h-8 rounded-full focus:outline-none focus:ring-2 focus:ring-[#0B7A46]/70"
-                              aria-label="Open profile"
-                            >
-                              <Avatar
-                                className="bg-white/[0.05]"
-                                imageUrl={profileImageUrls.get(author.id)}
-                                name={author.display_name ?? author.username}
-                                size="sm"
-                              />
-                            </Link>
-                          ) : (
-                            <Avatar className="bg-white/[0.05]" name="Basic22 user" size="sm" />
-                          )}
-                          <div className="feed-comment-surface min-w-0 rounded-lg px-3 py-2">
-                            {author ? (
-                              <Link
-                                href={`/friends/${author.id}`}
-                                className="text-xs font-semibold feed-body-text transition hover:text-[#9FE7BE]"
-                              >
-                                {author.display_name ?? "Basic22 user"}
-                              </Link>
-                            ) : (
-                              <p className="text-xs font-semibold feed-body-text">
-                                Basic22 user
-                              </p>
-                            )}
-                            <p className="mt-1 whitespace-pre-wrap text-sm leading-5 feed-body-text">
-                              {comment.body}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    <form action={addComment} autoComplete="off" className="flex gap-2">
-                      <input type="hidden" name="post_id" value={post.id} />
-                      <label
-                        className="sr-only"
-                        htmlFor={`basic22-comment-${post.id}`}
-                      >
-                        Add comment
-                      </label>
-                      <input
-                        id={`basic22-comment-${post.id}`}
-                        name="basic22_comment_body"
-                        required
-                        maxLength={1000}
-                        autoComplete="off"
-                        autoCorrect="off"
-                        autoCapitalize="sentences"
-                        spellCheck={true}
-                        placeholder="Write a comment"
-                        className="feed-inner-surface min-h-11 flex-1 rounded-lg px-3 text-sm outline-none transition placeholder:text-brg-muted focus:border-[#2C8B54]"
-                      />
-                      <button
-                        type="submit"
-                        className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-brg-accent transition hover:bg-brg-accentHover"
-                        aria-label="Send comment"
-                      >
-                        <Send size={17} />
-                      </button>
-                    </form>
-                  </div>
+                  <PostComments
+                    comments={commentViews}
+                    currentUserId={user.id}
+                    postId={post.id}
+                  />
                 </article>
               );
             })

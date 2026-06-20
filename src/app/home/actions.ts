@@ -49,29 +49,30 @@ export async function createPost(formData: FormData): Promise<CreatePostState> {
   const { supabase, user } = await getUser();
   const body = textValue(formData, "basic22_post_compose") || textValue(formData, "body");
   const image = formData.get("image");
+  const imageFile = image instanceof File && image.size > 0 ? image : null;
   let imagePath: string | null = null;
 
-  if (!body) {
-    return postState(false, "Write something before posting.");
+  if (!body && !imageFile) {
+    return postState(false, "Write something or choose an image before posting.");
   }
 
-  if (image instanceof File && image.size > 0) {
-    if (!isPostImageFile(image)) {
+  if (imageFile) {
+    if (!isPostImageFile(imageFile)) {
       return postState(false, "Please upload a JPG, PNG, WebP, or GIF image.");
     }
 
-    if (image.size > 5 * 1024 * 1024) {
+    if (imageFile.size > 5 * 1024 * 1024) {
       return postState(false, "Post images must be 5MB or smaller.");
     }
 
     const safeName =
-      image.name.replace(/[^a-zA-Z0-9._-]/g, "-").slice(-80) || "image";
+      imageFile.name.replace(/[^a-zA-Z0-9._-]/g, "-").slice(-80) || "image";
     imagePath = `${user.id}/${crypto.randomUUID()}-${safeName}`;
 
     const { error: uploadError } = await supabase.storage
       .from("post-images")
-      .upload(imagePath, image, {
-        contentType: image.type,
+      .upload(imagePath, imageFile, {
+        contentType: imageFile.type,
         upsert: false
       });
 
@@ -181,6 +182,7 @@ export async function toggleLike(formData: FormData) {
 export async function addComment(formData: FormData) {
   const { supabase, user } = await getUser();
   const postId = textValue(formData, "post_id");
+  const parentCommentId = textValue(formData, "parent_comment_id");
   const body = textValue(formData, "basic22_comment_body") || textValue(formData, "body");
 
   if (!postId || !body) {
@@ -190,7 +192,66 @@ export async function addComment(formData: FormData) {
   const { error } = await supabase.from("post_comments").insert({
     post_id: postId,
     author_id: user.id,
+    parent_comment_id: parentCommentId || null,
     body
+  });
+
+  if (error) {
+    withMessage(error.message);
+  }
+
+  revalidatePath("/home");
+}
+
+export async function toggleCommentLike(formData: FormData) {
+  const { supabase, user } = await getUser();
+  const commentId = textValue(formData, "comment_id");
+
+  if (!commentId) {
+    withMessage("Comment not found.");
+  }
+
+  const { data: existing } = await supabase
+    .from("comment_likes")
+    .select("comment_id")
+    .eq("comment_id", commentId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (existing) {
+    const { error } = await supabase
+      .from("comment_likes")
+      .delete()
+      .eq("comment_id", commentId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      withMessage(error.message);
+    }
+  } else {
+    const { error } = await supabase.from("comment_likes").insert({
+      comment_id: commentId,
+      user_id: user.id
+    });
+
+    if (error) {
+      withMessage(error.message);
+    }
+  }
+
+  revalidatePath("/home");
+}
+
+export async function deleteComment(formData: FormData) {
+  const { supabase } = await getUser();
+  const commentId = textValue(formData, "comment_id");
+
+  if (!commentId) {
+    withMessage("Comment not found.");
+  }
+
+  const { error } = await supabase.rpc("delete_post_comment", {
+    target_comment_id: commentId
   });
 
   if (error) {
