@@ -39,7 +39,7 @@ export async function AppShell({ children, title }: AppShellProps) {
   return (
     <div className="min-h-screen bg-brg-bg text-brg-text">
       <div className="grid min-h-screen lg:grid-cols-[260px_1fr]">
-        <aside className="border-b border-brg-border bg-black/10 p-5 lg:border-b-0 lg:border-r lg:p-6">
+        <aside className="flex flex-col border-b border-brg-border bg-black/10 p-5 lg:sticky lg:top-0 lg:max-h-screen lg:min-h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r lg:p-6">
           <div className="flex items-center justify-between lg:block">
             <Logo href="/home" />
             <div className="lg:hidden">
@@ -62,13 +62,15 @@ export async function AppShell({ children, title }: AppShellProps) {
             <NavLinks />
           </div>
 
-          <div className="mt-6 flex gap-2 overflow-x-auto pb-1 lg:hidden">
+          <div className="mt-6 overflow-x-auto pb-1 lg:hidden [&>nav]:auto-cols-max [&>nav]:grid-flow-col">
             <NavLinks />
           </div>
 
-          <div className="mt-10 hidden space-y-3 lg:block">
-            <ThemeToggle />
-            <form action={signOut}>
+          <div className="mt-5 flex flex-col gap-3 border-t border-brg-border pt-4 sm:flex-row lg:mt-auto lg:flex-col lg:pt-5">
+            <div className="sm:flex-1 lg:flex-none [&>button]:w-full">
+              <ThemeToggle />
+            </div>
+            <form action={signOut} className="sm:flex-1 lg:flex-none">
               <button
                 type="submit"
                 className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-sm text-brg-muted transition hover:bg-white/[0.04] hover:text-brg-text"
