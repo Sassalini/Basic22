@@ -2,7 +2,9 @@
 
 import { Send, Trash2 } from "lucide-react";
 import {
+  useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useTransition,
@@ -10,10 +12,10 @@ import {
 } from "react";
 import {
   deleteDirectMessageInline,
+  loadOlderMessages,
   sendDirectMessageInline
 } from "@/app/messages/actions";
 import { EmptyState } from "@/components/EmptyState";
-import { MessageScroller } from "@/components/MessageScroller";
 import { classNames, formatDateTime } from "@/lib/utils";
 
 type MessageRecord = {
@@ -23,18 +25,22 @@ type MessageRecord = {
   recipient_id: string;
   body: string;
   created_at: string;
+  read_at?: string | null;
 };
 
 type MessageThreadProps = {
   currentUserId: string;
+  hasMoreInitial: boolean;
   initialMessages: MessageRecord[];
   selectedFriendId: string;
 };
 
 const deletedMessageDelayMs = 2500;
+const topLoadThresholdPx = 96;
 
 export function MessageThread({
   currentUserId,
+  hasMoreInitial,
   initialMessages,
   selectedFriendId
 }: MessageThreadProps) {
@@ -43,15 +49,43 @@ export function MessageThread({
   );
   const [body, setBody] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
+  const [hasMoreOlderMessages, setHasMoreOlderMessages] = useState(hasMoreInitial);
+  const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false);
   const [isSending, startSending] = useTransition();
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
   const bodyVersionRef = useRef(0);
   const hideTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const loadingOlderRef = useRef(false);
+  const scrollAnchorRef = useRef<{ scrollHeight: number; scrollTop: number } | null>(
+    null
+  );
+  const scrollToBottomRef = useRef(true);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, [selectedFriendId]);
+
+  useLayoutEffect(() => {
+    const scroller = scrollerRef.current;
+
+    if (!scroller) {
+      return;
+    }
+
+    if (scrollAnchorRef.current) {
+      const anchor = scrollAnchorRef.current;
+      scroller.scrollTop = scroller.scrollHeight - anchor.scrollHeight + anchor.scrollTop;
+      scrollAnchorRef.current = null;
+      return;
+    }
+
+    if (scrollToBottomRef.current) {
+      scroller.scrollTop = scroller.scrollHeight;
+      scrollToBottomRef.current = false;
+    }
+  }, [messages]);
 
   useEffect(() => {
     const hideTimers = hideTimersRef.current;
@@ -76,6 +110,69 @@ export function MessageThread({
     }, deletedMessageDelayMs);
 
     hideTimersRef.current.set(messageId, timer);
+  }
+
+  const loadOlder = useCallback(async () => {
+    if (loadingOlderRef.current || !hasMoreOlderMessages || messages.length === 0) {
+      return;
+    }
+
+    const scroller = scrollerRef.current;
+    const oldestMessage = messages[0];
+
+    if (!scroller || !oldestMessage) {
+      return;
+    }
+
+    loadingOlderRef.current = true;
+    scrollAnchorRef.current = {
+      scrollHeight: scroller.scrollHeight,
+      scrollTop: scroller.scrollTop
+    };
+    setIsLoadingOlderMessages(true);
+    setStatusMessage("");
+
+    const result = await loadOlderMessages({
+      beforeCreatedAt: oldestMessage.created_at,
+      beforeId: oldestMessage.id,
+      friendId: selectedFriendId
+    });
+
+    if (!result.ok) {
+      setStatusMessage(result.message);
+      scrollAnchorRef.current = null;
+      setIsLoadingOlderMessages(false);
+      loadingOlderRef.current = false;
+      inputRef.current?.focus();
+      return;
+    }
+
+    setHasMoreOlderMessages(result.hasMore);
+    setMessages((currentMessages) => {
+      const currentIds = new Set(currentMessages.map((message) => message.id));
+      const olderMessages = result.messages.filter(
+        (message) => !currentIds.has(message.id)
+      );
+
+      if (olderMessages.length === 0) {
+        scrollAnchorRef.current = null;
+        return currentMessages;
+      }
+
+      return [...olderMessages, ...currentMessages];
+    });
+    setIsLoadingOlderMessages(false);
+    loadingOlderRef.current = false;
+  }, [hasMoreOlderMessages, messages, selectedFriendId]);
+
+  function handleScroll() {
+    const scroller = scrollerRef.current;
+
+    if (!scroller || scroller.scrollTop > topLoadThresholdPx) {
+      return;
+    }
+
+    void loadOlder();
   }
 
   function handleSend(event: FormEvent<HTMLFormElement>) {
@@ -103,6 +200,7 @@ export function MessageThread({
         return;
       }
 
+      scrollToBottomRef.current = true;
       setMessages((currentMessages) => [...currentMessages, result.message]);
       setBody((currentBody) =>
         bodyVersionRef.current === submittedBodyVersion ? "" : currentBody
@@ -147,7 +245,16 @@ export function MessageThread({
 
   return (
     <>
-      <MessageScroller className="calm-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
+      <div
+        ref={scrollerRef}
+        onScroll={handleScroll}
+        className="calm-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5"
+      >
+        {isLoadingOlderMessages ? (
+          <p className="rounded-lg border border-brg-border bg-white/[0.03] px-3 py-2 text-center text-xs text-brg-muted">
+            Loading older messages...
+          </p>
+        ) : null}
         {messages.length === 0 ? (
           <EmptyState
             title="No messages yet"
@@ -201,7 +308,7 @@ export function MessageThread({
             );
           })
         )}
-      </MessageScroller>
+      </div>
 
       <form
         onSubmit={handleSend}

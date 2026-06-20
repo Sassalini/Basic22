@@ -40,6 +40,12 @@ type MessageRecord = {
   read_at: string | null;
 };
 
+const messagePageSize = 10;
+
+function conversationFilter(currentUserId: string, friendId: string) {
+  return `and(sender_id.eq.${currentUserId},recipient_id.eq.${friendId}),and(sender_id.eq.${friendId},recipient_id.eq.${currentUserId})`;
+}
+
 export default async function MessagesPage({ searchParams }: MessagesPageProps) {
   const params = await searchParams;
   const supabase = await createClient();
@@ -89,12 +95,13 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
     const { data: messageRows } = await supabase
       .from("direct_messages")
       .select("id, sender_id, recipient_id, body, created_at, deleted_at, read_at")
-      .or(`sender_id.eq.${selectedFriendId},recipient_id.eq.${selectedFriendId}`)
+      .or(conversationFilter(user.id, selectedFriendId))
       .is("deleted_at", null)
-      .order("created_at", { ascending: true })
-      .limit(100);
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(messagePageSize);
 
-    messages = (messageRows ?? []) as MessageRecord[];
+    messages = ((messageRows ?? []) as MessageRecord[]).reverse();
   }
 
   const selectedFriend = selectedFriendId ? friends.get(selectedFriendId) : null;
@@ -185,6 +192,7 @@ export default async function MessagesPage({ searchParams }: MessagesPageProps) 
               <MessageThread
                 key={selectedFriendId}
                 currentUserId={user.id}
+                hasMoreInitial={messages.length === messagePageSize}
                 initialMessages={messages}
                 selectedFriendId={selectedFriendId}
               />
