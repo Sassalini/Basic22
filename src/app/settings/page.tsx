@@ -57,9 +57,6 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         <section className="rounded-xl border border-brg-border bg-brg-panel/80 p-5 shadow-calm">
           <h2 className="text-lg font-semibold">Profile settings</h2>
-          <p className="mt-2 text-sm leading-6 text-brg-muted">
-            These details are used inside friend search and private conversations.
-          </p>
 
           <div className="mt-6 flex items-center gap-4 rounded-xl border border-brg-border bg-white/[0.03] p-4">
             <Avatar imageUrl={profileImageUrl} name={displayName} size="xl" />
@@ -98,7 +95,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                 maxLength={160}
                 rows={4}
                 defaultValue={profile?.about ?? ""}
-                placeholder="A quiet note about you"
+                placeholder="A note about you"
                 className="resize-none rounded-lg border border-brg-border bg-black/10 px-3 py-2 text-brg-text outline-none transition placeholder:text-brg-muted focus:border-[#0B7A46]"
               />
             </label>
