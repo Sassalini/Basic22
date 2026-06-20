@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import { PublicFooter } from "@/components/PublicFooter";
 
 const values = [
   {
@@ -149,6 +150,8 @@ export default function LandingPage() {
           );
         })}
       </section>
+
+      <PublicFooter />
     </main>
   );
 }
