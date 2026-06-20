@@ -2,8 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getEmailRedirectTo } from "@/lib/auth-redirects";
 import { createClient } from "@/lib/supabase/server";
 import { generateUsername } from "@/lib/usernames";
+
+const verificationEmailSentMessage =
+  "A verification email has been sent. Please confirm your email before logging in. Check your spam/junk folder if you do not see it.";
+
+const emailNotConfirmedMessage =
+  "Your email has not been confirmed yet. Please check your inbox and verify your email before logging in. Check your spam/junk folder if you do not see it.";
 
 function getString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -13,6 +20,14 @@ function getString(formData: FormData, key: string) {
 function authRedirect(path: string, message: string) {
   const params = new URLSearchParams({ message });
   redirect(`${path}?${params.toString()}`);
+}
+
+function friendlySignInError(message: string) {
+  if (message.toLowerCase().includes("email not confirmed")) {
+    return emailNotConfirmedMessage;
+  }
+
+  return message;
 }
 
 export async function signIn(formData: FormData) {
@@ -27,7 +42,7 @@ export async function signIn(formData: FormData) {
   });
 
   if (error) {
-    authRedirect("/sign-in", error.message);
+    authRedirect("/sign-in", friendlySignInError(error.message));
   }
 
   revalidatePath("/", "layout");
@@ -56,10 +71,12 @@ export async function signUp(formData: FormData) {
     authRedirect("/sign-up", "Password must be at least 8 characters.");
   }
 
-  const { error } = await supabase.auth.signUp({
+  const emailRedirectTo = await getEmailRedirectTo();
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
+      emailRedirectTo,
       data: {
         display_name: displayName,
         username
@@ -72,7 +89,12 @@ export async function signUp(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  redirect("/home");
+
+  if (data.session) {
+    redirect("/home");
+  }
+
+  authRedirect("/sign-in", verificationEmailSentMessage);
 }
 
 export async function signOut() {

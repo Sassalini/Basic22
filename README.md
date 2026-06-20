@@ -105,6 +105,18 @@ Manual Supabase checks after applying the migration:
 - Confirm RLS is enabled on all public tables listed above.
 - Confirm profile image storage policies are not public; the app uses short-lived signed URLs for avatars and profile gallery images.
 
+Supabase Authentication > URL Configuration should include:
+
+- Site URL: `https://www.basic22.com`
+- Redirect URLs:
+  - `https://www.basic22.com/**`
+  - `https://basic22.com/**`
+  - `https://basic22.mrhobday.workers.dev/**`
+  - `http://localhost:3000/**`
+  - `http://localhost:3000/auth/callback`
+
+Basic22 sends auth confirmation links back to `/auth/callback`. Deployed auth emails use `https://www.basic22.com/auth/callback`; local development uses `http://localhost:3000/auth/callback`.
+
 ## Run locally
 
 ```bash

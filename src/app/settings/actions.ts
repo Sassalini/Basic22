@@ -2,8 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getEmailRedirectTo } from "@/lib/auth-redirects";
 import { createClient } from "@/lib/supabase/server";
 import { generateUsername } from "@/lib/usernames";
+
+const emailChangeRequestedMessage =
+  "Check your new email address to confirm this change. If secure email change is enabled, confirmation may be required from both old and new email addresses.";
 
 function value(formData: FormData, key: string) {
   const field = formData.get(key);
@@ -17,6 +21,32 @@ function settingsMessage(message: string): never {
 
 function isImageFile(file: File) {
   return ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type);
+}
+
+function isEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function friendlyEmailUpdateError(message: string) {
+  const lowerMessage = message.toLowerCase();
+
+  if (lowerMessage.includes("invalid") && lowerMessage.includes("email")) {
+    return "Enter a valid email address.";
+  }
+
+  if (lowerMessage.includes("already") && lowerMessage.includes("registered")) {
+    return "That email address is already registered. Try a different email address.";
+  }
+
+  if (
+    lowerMessage.includes("reauth") ||
+    lowerMessage.includes("recent") ||
+    lowerMessage.includes("jwt")
+  ) {
+    return "Please sign in again, then try changing your email.";
+  }
+
+  return message || "We could not update your email. Please try again.";
 }
 
 async function getUser() {
@@ -115,6 +145,37 @@ export async function updateProfile(formData: FormData) {
   revalidatePath("/messages");
   revalidatePath("/", "layout");
   settingsMessage("Settings saved.");
+}
+
+export async function updateEmail(formData: FormData) {
+  const { supabase, user } = await getUser();
+  const newEmail = value(formData, "new_email");
+  const currentEmail = user.email?.toLowerCase();
+
+  if (!newEmail) {
+    settingsMessage("Enter the new email address.");
+  }
+
+  if (!isEmail(newEmail)) {
+    settingsMessage("Enter a valid email address.");
+  }
+
+  if (currentEmail && newEmail.toLowerCase() === currentEmail) {
+    settingsMessage("That is already your current email address.");
+  }
+
+  const emailRedirectTo = await getEmailRedirectTo();
+  const { error } = await supabase.auth.updateUser(
+    { email: newEmail },
+    { emailRedirectTo }
+  );
+
+  if (error) {
+    settingsMessage(friendlyEmailUpdateError(error.message));
+  }
+
+  revalidatePath("/settings");
+  settingsMessage(emailChangeRequestedMessage);
 }
 
 export async function uploadProfileGalleryImage(formData: FormData) {

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { signOut } from "@/app/auth/actions";
 import {
   deleteProfileGalleryImage,
+  updateEmail,
   updateProfile,
   uploadProfileGalleryImage
 } from "@/app/settings/actions";
@@ -71,6 +72,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   const galleryImageUrls = await getProfileGalleryImageUrls(supabase, galleryImages);
   const profileImageUrl = profileImageUrls.get(user.id);
   const displayName = profile?.display_name ?? user.email ?? "Basic22 user";
+  const currentEmail = user.email ?? profile?.email ?? "";
 
   return (
     <AppShell title="Settings">
@@ -132,7 +134,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
               Email
               <input
                 disabled
-                value={profile?.email ?? user.email ?? ""}
+                value={currentEmail}
                 className="min-h-11 rounded-lg border border-brg-border bg-black/10 px-3 text-brg-muted outline-none"
               />
             </label>
@@ -141,6 +143,40 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
         </section>
 
         <aside className="space-y-5">
+          <section className="rounded-xl border border-brg-border bg-brg-panel/80 p-5 shadow-calm">
+            <h2 className="text-lg font-semibold">Account email</h2>
+            <p className="mt-2 text-sm leading-6 text-brg-muted">
+              Change the email you use to sign in. Basic22 keeps your current email until
+              Supabase confirms the change.
+            </p>
+            <div className="mt-4 rounded-lg border border-brg-border bg-white/[0.03] p-3">
+              <p className="text-xs uppercase tracking-[0.14em] text-brg-muted">
+                Current email
+              </p>
+              <p className="mt-1 break-all text-sm font-semibold text-brg-text">
+                {currentEmail || "No email available"}
+              </p>
+            </div>
+            <form action={updateEmail} className="mt-4 grid gap-3">
+              <label className="grid gap-2 text-sm">
+                New email
+                <input
+                  required
+                  name="new_email"
+                  type="email"
+                  autoComplete="email"
+                  className="min-h-11 rounded-lg border border-brg-border bg-black/10 px-3 text-brg-text outline-none transition placeholder:text-brg-muted focus:border-[#0B7A46]"
+                  placeholder="new@example.com"
+                />
+                <span className="text-xs leading-5 text-brg-muted">
+                  Check your new inbox after saving. Secure email change may require
+                  confirmation from both old and new email addresses.
+                </span>
+              </label>
+              <SubmitButton pendingLabel="Updating email...">Save email</SubmitButton>
+            </form>
+          </section>
+
           <section className="rounded-xl border border-brg-border bg-brg-panel/80 p-5 shadow-calm">
             <h2 className="text-lg font-semibold">Profile images</h2>
             <form
