@@ -1,10 +1,11 @@
-import { Check, Search, UserPlus, X } from "lucide-react";
+import { Check, Search, UserMinus, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   removeFriend,
   respondToFriendRequest,
-  sendFriendRequest
+  sendFriendRequest,
+  withdrawFriendRequest
 } from "@/app/friends/actions";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Avatar";
@@ -335,22 +336,53 @@ export default async function FriendsPage({ searchParams }: FriendsPageProps) {
             </div>
           </div>
 
-          {outgoing.length > 0 ? (
-            <div className="rounded-xl border border-brg-border bg-brg-panel/80 p-4 shadow-calm">
-              <h2 className="font-semibold">Sent requests</h2>
-              <div className="mt-4 space-y-3 text-sm text-brg-muted">
-                {outgoing.map((friendship) => {
+          <div className="rounded-xl border border-brg-border bg-brg-panel/80 p-4 shadow-calm">
+            <h2 className="font-semibold">Sent requests</h2>
+            <div className="mt-4 space-y-3">
+              {outgoing.length === 0 ? (
+                <p className="text-sm text-brg-muted">No sent requests.</p>
+              ) : (
+                outgoing.map((friendship) => {
                   const addressee = profiles.get(friendship.addressee_id);
                   return (
-                    <p key={friendship.id}>
-                      {addressee?.display_name ?? "Basic22 user"} -{" "}
-                      {formatRelativeTime(friendship.created_at)}
-                    </p>
+                    <div
+                      key={friendship.id}
+                      className="rounded-lg border border-brg-border bg-white/[0.03] p-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar
+                          imageUrl={addressee ? profileImageUrls.get(addressee.id) : null}
+                          name={addressee?.display_name ?? addressee?.username}
+                          size="md"
+                        />
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold">
+                            {addressee?.display_name ??
+                              addressee?.username ??
+                              "Basic22 user"}
+                          </p>
+                          <p className="truncate text-xs text-brg-muted">
+                            @{addressee?.username ?? "user"} -{" "}
+                            {formatRelativeTime(friendship.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                      <form action={withdrawFriendRequest} className="mt-3">
+                        <input type="hidden" name="friendship_id" value={friendship.id} />
+                        <ConfirmSubmitButton
+                          confirmMessage="Withdraw this friend request?"
+                          className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-brg-border px-3 text-sm font-semibold text-brg-muted transition hover:border-[#0B7A46]/60 hover:text-brg-text"
+                        >
+                          <UserMinus size={16} />
+                          Withdraw request
+                        </ConfirmSubmitButton>
+                      </form>
+                    </div>
                   );
-                })}
-              </div>
+                })
+              )}
             </div>
-          ) : null}
+          </div>
         </aside>
       </div>
     </AppShell>

@@ -1,10 +1,28 @@
 import Link from "next/link";
 import { policyLinks } from "@/lib/policies";
 
-export function PublicFooter() {
+type PublicFooterProps = {
+  variant?: "public" | "app";
+};
+
+export function PublicFooter({ variant = "public" }: PublicFooterProps) {
+  const isAppVariant = variant === "app";
+
   return (
-    <footer className="border-t border-brg-border bg-brg-bg px-5 py-8 text-sm text-brg-muted sm:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-5 md:flex-row md:items-center md:justify-between">
+    <footer
+      className={
+        isAppVariant
+          ? "mt-10 border-t border-brg-border pb-2 pt-6 text-sm text-brg-muted"
+          : "border-t border-brg-border bg-brg-bg px-5 py-8 text-sm text-brg-muted sm:px-8"
+      }
+    >
+      <div
+        className={
+          isAppVariant
+            ? "flex flex-col gap-5 md:flex-row md:items-center md:justify-between"
+            : "mx-auto flex max-w-7xl flex-col gap-5 md:flex-row md:items-center md:justify-between"
+        }
+      >
         <div>
           <Link href="/" className="font-semibold tracking-normal text-brg-text">
             BASIC22

@@ -74,6 +74,52 @@ export async function respondToFriendRequest(formData: FormData) {
   friendsMessage(response === "accepted" ? "Friend request accepted." : "Friend request rejected.");
 }
 
+export async function withdrawFriendRequest(formData: FormData) {
+  const { supabase, user } = await getUser();
+  const friendshipId = value(formData, "friendship_id");
+
+  if (!friendshipId) {
+    friendsMessage("Friend request not found.");
+  }
+
+  const { data: friendship, error: findError } = await supabase
+    .from("friendships")
+    .select("id, requester_id, addressee_id, status")
+    .eq("id", friendshipId)
+    .eq("requester_id", user.id)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  if (findError) {
+    friendsMessage(findError.message);
+  }
+
+  if (!friendship) {
+    friendsMessage("Friend request not found.");
+  }
+
+  const { data: deletedFriendship, error } = await supabase
+    .from("friendships")
+    .delete()
+    .eq("id", friendship.id)
+    .eq("requester_id", user.id)
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    friendsMessage(error.message);
+  }
+
+  if (!deletedFriendship) {
+    friendsMessage("Friend request could not be withdrawn.");
+  }
+
+  revalidatePath("/friends");
+  revalidatePath(`/friends/${friendship.addressee_id}`);
+  friendsMessage("Friend request withdrawn.");
+}
+
 export async function removeFriend(formData: FormData) {
   const { supabase, user } = await getUser();
   const friendshipId = value(formData, "friendship_id");

@@ -5,6 +5,7 @@ import { signOut } from "@/app/auth/actions";
 import { Avatar } from "@/components/Avatar";
 import { Logo } from "@/components/Logo";
 import { NavLinks } from "@/components/NavLinks";
+import { PublicFooter } from "@/components/PublicFooter";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { getProfileImageUrls } from "@/lib/profile-images";
 import { createClient } from "@/lib/supabase/server";
@@ -133,6 +134,8 @@ export async function AppShell({ children, title }: AppShellProps) {
             </header>
 
             {children}
+
+            <PublicFooter variant="app" />
           </div>
         </main>
       </div>

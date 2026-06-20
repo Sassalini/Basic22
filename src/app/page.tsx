@@ -1,5 +1,6 @@
 import {
   HeartHandshake,
+  ImagePlus,
   LockKeyhole,
   MessageCircle,
   Sparkles,
@@ -24,14 +25,20 @@ const values = [
 
 const previewPosts = [
   {
-    name: "Maya",
+    comments: "2",
+    likes: "4",
+    name: "Maya Patel",
     text: "Quiet coffee and a clear morning. Exactly enough.",
-    count: "4"
+    time: "12 minutes ago",
+    username: "maya"
   },
   {
-    name: "Sam",
-    text: "Walked the long way home. The best decision of the day.",
-    count: "2"
+    comments: "1",
+    likes: "2",
+    name: "Sam Green",
+    text: "Walked the long way home and caught up with Jay. The best decision of the day.",
+    time: "28 minutes ago",
+    username: "sam"
   }
 ];
 
@@ -91,15 +98,33 @@ export default function LandingPage() {
               <LockKeyhole size={20} className="text-[#0B7A46]" />
             </div>
 
-            <div className="mt-4 rounded-xl border border-brg-border bg-white/[0.03] p-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-[#0B7A46]/25" />
-                <div className="h-4 flex-1 rounded-full bg-white/[0.08]" />
-              </div>
-              <div className="mt-4 flex justify-end">
-                <span className="rounded-lg bg-brg-accent px-4 py-2 text-sm font-semibold">
+            <div className="mt-4 feed-card-surface rounded-xl p-4">
+              <label className="sr-only" htmlFor="landing-post-preview">
+                Demo new post
+              </label>
+              <textarea
+                id="landing-post-preview"
+                readOnly
+                rows={3}
+                placeholder="What would you like to share with friends?"
+                className="feed-inner-surface w-full resize-none rounded-lg p-3 text-sm leading-6 text-brg-text outline-none placeholder:text-brg-muted"
+              />
+              <div className="mt-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                <button
+                  type="button"
+                  aria-disabled="true"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[color:var(--feed-card-border)] px-3 text-sm feed-muted-text"
+                >
+                  <ImagePlus size={17} />
+                  Add image
+                </button>
+                <button
+                  type="button"
+                  aria-disabled="true"
+                  className="inline-flex min-h-11 items-center justify-center rounded-lg bg-brg-accent px-5 py-2 text-sm font-semibold text-brg-text"
+                >
                   Post
-                </span>
+                </button>
               </div>
             </div>
 
@@ -107,25 +132,29 @@ export default function LandingPage() {
               {previewPosts.map((post) => (
                 <article
                   key={post.name}
-                  className="rounded-xl border border-brg-border bg-white/[0.03] p-4"
+                  className="feed-card-surface rounded-xl p-4"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0B7A46]/25 text-sm font-semibold">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0B7A46]/20 text-sm font-semibold text-brg-text">
                       {post.name[0]}
                     </div>
                     <div>
-                      <p className="font-semibold">{post.name}</p>
-                      <p className="text-xs text-brg-muted">a few minutes ago</p>
+                      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                        <p className="font-semibold feed-body-text">{post.name}</p>
+                        <p className="text-xs feed-muted-text">@{post.username}</p>
+                      </div>
+                      <p className="text-xs feed-muted-text">{post.time}</p>
                     </div>
                   </div>
-                  <p className="mt-3 text-sm leading-6 text-brg-text">{post.text}</p>
-                  <div className="mt-4 flex items-center gap-4 text-sm text-brg-muted">
-                    <span className="inline-flex items-center gap-2">
-                      <HeartHandshake size={16} />
-                      {post.count}
+                  <p className="mt-3 text-sm leading-6 feed-body-text">{post.text}</p>
+                  <div className="mt-4 flex items-center gap-3 text-sm feed-muted-text">
+                    <span className="inline-flex min-h-9 items-center gap-2 rounded-lg px-2">
+                      <HeartHandshake size={17} />
+                      {post.likes}
                     </span>
-                    <span className="inline-flex items-center gap-2">
-                      <MessageCircle size={16} />1
+                    <span className="inline-flex min-h-9 items-center gap-2 rounded-lg px-2">
+                      <MessageCircle size={17} />
+                      {post.comments}
                     </span>
                   </div>
                 </article>
