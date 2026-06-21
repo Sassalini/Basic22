@@ -4,7 +4,10 @@ import { policies } from "@/lib/policies";
 
 export const metadata: Metadata = {
   title: policies.terms.metadataTitle,
-  description: policies.terms.description
+  description: policies.terms.description,
+  alternates: {
+    canonical: policies.terms.href
+  }
 };
 
 export default function TermsPage() {

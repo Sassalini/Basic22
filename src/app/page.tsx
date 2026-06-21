@@ -6,9 +6,42 @@ import {
   Sparkles,
   Users
 } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { PublicFooter } from "@/components/PublicFooter";
+
+const landingDescription =
+  "Basic22 is a privacy-conscious social connection platform where you can reconnect with your circle without the distractions of media and news.";
+
+export const metadata: Metadata = {
+  title: "Basic22 | Private Social Connection Platform",
+  description: landingDescription,
+  alternates: {
+    canonical: "/"
+  },
+  openGraph: {
+    title: "Basic22",
+    description: landingDescription,
+    url: "/",
+    siteName: "Basic22",
+    type: "website",
+    images: [
+      {
+        url: "/icon.svg",
+        width: 64,
+        height: 64,
+        alt: "Basic22"
+      }
+    ]
+  },
+  twitter: {
+    card: "summary",
+    title: "Basic22",
+    description: landingDescription,
+    images: ["/icon.svg"]
+  }
+};
 
 const values = [
   {

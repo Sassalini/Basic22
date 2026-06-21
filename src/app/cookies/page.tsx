@@ -4,7 +4,10 @@ import { policies } from "@/lib/policies";
 
 export const metadata: Metadata = {
   title: policies.cookies.metadataTitle,
-  description: policies.cookies.description
+  description: policies.cookies.description,
+  alternates: {
+    canonical: policies.cookies.href
+  }
 };
 
 export default function CookiesPage() {

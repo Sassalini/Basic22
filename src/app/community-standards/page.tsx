@@ -4,7 +4,10 @@ import { policies } from "@/lib/policies";
 
 export const metadata: Metadata = {
   title: policies.communityStandards.metadataTitle,
-  description: policies.communityStandards.description
+  description: policies.communityStandards.description,
+  alternates: {
+    canonical: policies.communityStandards.href
+  }
 };
 
 export default function CommunityStandardsPage() {

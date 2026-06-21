@@ -1,9 +1,23 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+const siteUrl = new URL("https://www.basic22.com");
+
 export const metadata: Metadata = {
+  metadataBase: siteUrl,
   title: "Basic22",
-  description: "A calm, ad-free, friends-only social media platform."
+  description: "A calm, ad-free, friends-only social media platform.",
+  applicationName: "Basic22",
+  icons: {
+    icon: "/icon.svg"
+  },
+  openGraph: {
+    siteName: "Basic22",
+    type: "website"
+  },
+  twitter: {
+    card: "summary"
+  }
 };
 
 export default function RootLayout({
